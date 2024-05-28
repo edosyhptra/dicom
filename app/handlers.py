@@ -2,10 +2,9 @@ import os
 from pydicom import dcmread
 from pydicom.dataset import Dataset
 
-from pynetdicom import debug_logger
 
 # debug_logger()
-def handle_echo(event, cli_config, logger):
+def handle_echo(event):
     """Handler for evt.EVT_C_ECHO.
 
     Parameters
@@ -25,7 +24,7 @@ def handle_echo(event, cli_config, logger):
     requestor = event.assoc.requestor
     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
     addr, port = requestor.address, requestor.port
-    logger.info(f"Received C-ECHO request from {addr}:{port} at {timestamp}")
+    print(f"Received C-ECHO request from {addr}:{port} at {timestamp}")
 
     return 0x0000
 

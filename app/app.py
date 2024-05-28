@@ -12,16 +12,21 @@ from pydicom.uid import (
 from pynetdicom import (
     AE,
     evt,
-    debug_logger
+    debug_logger,
+    ALL_TRANSFER_SYNTAXES,
 )
 
-from handlers import handle_find
+from handlers import handle_find, handle_echo
 
-from pynetdicom.sop_class import ModalityWorklistInformationFind
+# from pynetdicom.apps.common import setup_logging
+from pynetdicom.sop_class import (
+    ModalityWorklistInformationFind,
+    Verification,
+)
 # from pynetdicom._globals import ALL_TRANSFER_SYNTAXES, DEFAULT_MAX_LENGTH
 # from pynetdicom.utils import set_ae
 
-debug_logger()
+# debug_logger()
 
 __aetitle__ = "Dicom project"
 __version__ = "0.6.0"
@@ -87,7 +92,6 @@ def _setup_argparser():
     
     return parser.parse_args()
     
-
 def main(args=None):
     if args is not None:
         sys.argv = args
@@ -113,8 +117,12 @@ def main(args=None):
     ae.network_timeout = args.network_timeout
     
     ae.add_supported_context(ModalityWorklistInformationFind)
+    ae.add_supported_context(Verification, ALL_TRANSFER_SYNTAXES)
 
-    handlers = [(evt.EVT_C_FIND, handle_find)]
+    handlers = [
+        (evt.EVT_C_FIND, handle_find),
+        (evt.EVT_C_ECHO, handle_echo),
+    ]
     
     ae.start_server(
         (args.bind_address, args.port), evt_handlers=handlers
