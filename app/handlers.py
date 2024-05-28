@@ -30,6 +30,25 @@ def handle_echo(event):
 
 # Implement the handler for evt.EVT_C_FIND
 def handle_find(event):
+    requestor = event.assoc.requestor
+    timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    addr, port = requestor.address, requestor.port
+    print(f"Received C-FIND request from {addr}:{port} at {timestamp}")
+    
+    model = event.request.AffectedSOPClassUID
+    
+    if model.keyword in (
+        "UnifiedProcedureStepPull",
+        "ModalityWorklistInformationModelFind",
+    ):
+        yield 0x0000, None
+    else:
+        print("request accepted")
+        
+        yield 0xFF00, None
+    
+    
+def handle_find2(event):
     """Handle a C-FIND request event."""
     ds = event.identifier
 

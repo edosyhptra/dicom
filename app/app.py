@@ -2,6 +2,7 @@ import argparse
 import sys
 import os
 from configparser import ConfigParser
+import db
 
 from pydicom.uid import (
     ExplicitVRBigEndian,
@@ -108,7 +109,11 @@ def main(args=None):
     # Use default or specified configuration file
     current_dir = os.path.abspath(os.path.dirname(__file__))
     instance_dir = os.path.join(current_dir, args.instance_location)
-    # db_path = os.path.join(current_dir, app_config["database_location"])
+    db_path = os.path.join(current_dir, args.database_location["database_location"])
+    
+    # The path to the database
+    db_path = f"sqlite:///{db_path}"
+    db.create(db_path)
     
     # Try to create the instance storage directory
     os.makedirs(instance_dir, exist_ok=True)
@@ -116,7 +121,10 @@ def main(args=None):
     ae = AE(args.ae_title)
     ae.network_timeout = args.network_timeout
     
+    # Basic Worklist
     ae.add_supported_context(ModalityWorklistInformationFind)
+    
+    #Verification or Echo
     ae.add_supported_context(Verification, ALL_TRANSFER_SYNTAXES)
 
     handlers = [
