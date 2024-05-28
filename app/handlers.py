@@ -5,6 +5,29 @@ from pydicom.dataset import Dataset
 from pynetdicom import debug_logger
 
 # debug_logger()
+def handle_echo(event, cli_config, logger):
+    """Handler for evt.EVT_C_ECHO.
+
+    Parameters
+    ----------
+    event : events.Event
+        The corresponding event.
+    cli_config : dict
+        A :class:`dict` containing configuration settings passed via CLI.
+    logger : logging.Logger
+        The application's logger.
+
+    Returns
+    -------
+    int
+        The status of the C-ECHO operation, always ``0x0000`` (Success).
+    """
+    requestor = event.assoc.requestor
+    timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    addr, port = requestor.address, requestor.port
+    logger.info(f"Received C-ECHO request from {addr}:{port} at {timestamp}")
+
+    return 0x0000
 
 # Implement the handler for evt.EVT_C_FIND
 def handle_find(event):
