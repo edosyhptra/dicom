@@ -22,6 +22,7 @@ from handlers import handle_find, handle_echo
 # from pynetdicom.apps.common import setup_logging
 from pynetdicom.sop_class import (
     ModalityWorklistInformationFind,
+    PatientRootQueryRetrieveInformationModelFind,
     Verification,
 )
 # from pynetdicom._globals import ALL_TRANSFER_SYNTAXES, DEFAULT_MAX_LENGTH
@@ -109,11 +110,11 @@ def main(args=None):
     # Use default or specified configuration file
     current_dir = os.path.abspath(os.path.dirname(__file__))
     instance_dir = os.path.join(current_dir, args.instance_location)
-    db_path = os.path.join(current_dir, args.database_location["database_location"])
+    # db_path = os.path.join(current_dir, args.database_location["database_location"])
     
     # The path to the database
-    db_path = f"sqlite:///{db_path}"
-    db.create(db_path)
+    # db_path = f"sqlite:///{instance_dir}"
+    # db.create(db_path)
     
     # Try to create the instance storage directory
     os.makedirs(instance_dir, exist_ok=True)
@@ -123,6 +124,7 @@ def main(args=None):
     
     # Basic Worklist
     ae.add_supported_context(ModalityWorklistInformationFind)
+    ae.add_supported_context(PatientRootQueryRetrieveInformationModelFind)
     
     #Verification or Echo
     ae.add_supported_context(Verification, ALL_TRANSFER_SYNTAXES)
