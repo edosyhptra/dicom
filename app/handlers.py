@@ -1,6 +1,7 @@
 import os
 from pydicom import dcmread
 from pydicom.dataset import Dataset
+from db import InvalidIdentifier, search
 
 
 # debug_logger()
@@ -28,11 +29,68 @@ def handle_echo(event):
 
     return 0x0000
 
-# Implement the handler for evt.EVT_C_FIND
+# # Implement the handler for evt.EVT_C_FIND
+# def handle_find(event):
+#     requestor = event.assoc.requestor
+#     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+#     addr, port = requestor.address, requestor.port
+#     print(f"Received C-FIND request from {addr}:{port} at {timestamp}")
+    
+#     model = event.request.AffectedSOPClassUID
+    
+#     if model.keyword in (
+#         "UnifiedProcedureStepPull",
+#         "ModalityWorklistInformationModelFind",
+#     ):
+#         print('model: ', model.keyword)
+#         print(event.identifier)
+#         yield 0x0000, None
+#     else:
+#         try:
+#             matches = search(model, event.identifier)
+        
+#         except InvalidIdentifier as exc:
+#             print('Invalid C-FIND Identifier received')
+#             print(str(exc))
+            
+#             yield 0x900, None
+#             return
+        
+#         except Exception as exc:
+#             print("Exception occurred while querying database")
+#             # lexc)
+#             print(exc)
+#             yield 0xC320, None
+            
+#             return
+        
+#         for match in matches:
+#             if event.is_cancelled:
+#                 yield 0xFE00, None
+#                 return
+#             try:
+#                 response = match.as_identifier(event.identifier, model)
+#                 response.RetrieveAETitle = event.assoc.ae.ae_title
+#             except Exception as exc:
+#                 print("Error creating response Identifier")
+#                 # logger.exception(exc)
+#                 yield 0xC322, None
+
+            
+#             yield 0xFF00, response
+#         # print('hello')
+#         # print("request accepted")
+        
+#         yield 0xFF00, None
+    
+    
+# def handle_find(event):
+#    # Implement the handler for evt.EVT_C_FIND
+
 def handle_find(event):
     """Handle a C-FIND request event."""
     ds = event.identifier
-
+    
     print("Received C-FIND request")
 
     # Import stored SOP Instances

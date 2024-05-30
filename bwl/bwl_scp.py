@@ -6,7 +6,7 @@ from pynetdicom import AE, evt, debug_logger
 # from pynetdicom.sop_class import PatientRootQueryRetrieveInformationModelFind
 from pynetdicom.sop_class import ModalityWorklistInformationFind
 
-debug_logger()
+# debug_logger()
 
 # Implement the handler for evt.EVT_C_FIND
 def handle_find(event):
