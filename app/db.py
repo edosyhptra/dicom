@@ -444,7 +444,6 @@ def search(model, identifier, session):
     # Remove all optional keys, after this only unique/required will remain
     for elem in identifier:
         kw = elem.keyword
-        print('hello')
         if kw != "QueryRetrieveLevel" and kw not in _ATTRIBUTES:
             delattr(identifier, kw)
 
