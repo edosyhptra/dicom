@@ -83,14 +83,14 @@ def _setup_argparser():
         metavar="[f]ile",
         help="override the location of the database using file f",
         type=str,
-        default="app/data/data.sqlite"
+        default="data.sqlite"
     )
     db_opts.add_argument(
         "--instance-location",
         metavar="[d]irectory",
         help=("override the configured instance storage location to directory d"),
         type=str,
-        default="app/data/"  # Default value set to "data/"
+        default="data/"  # Default value set to "data/"
     )
     
     return parser.parse_args()
@@ -125,8 +125,8 @@ def main(args=None):
     ae.network_timeout = args.network_timeout
     
     # Basic Worklist
-    ae.add_supported_context(ModalityWorklistInformationFind)
-    ae.add_supported_context(PatientRootQueryRetrieveInformationModelFind)
+    ae.add_supported_context(ModalityWorklistInformationFind, ALL_TRANSFER_SYNTAXES)
+    ae.add_supported_context(PatientRootQueryRetrieveInformationModelFind, ALL_TRANSFER_SYNTAXES)
     
     #Verification or Echo
     ae.add_supported_context(Verification, ALL_TRANSFER_SYNTAXES)

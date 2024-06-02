@@ -9,18 +9,22 @@ debug_logger()
 ae = AE()
 
 # Add a requested presentation context
-ae.add_requested_context(ModalityWorklistInformationFind)
-# ae.add_requested_context(PatientRootQueryRetrieveInformationModelFind)
+# ae.add_requested_context(ModalityWorklistInformationFind)
+ae.add_requested_context(PatientRootQueryRetrieveInformationModelFind)
 
 # Create our Identifier (query) dataset
 ds = Dataset()
-ds.PatientName = 'Edo'
+ds.PatientName = 'CITIZEN^Jan'
 ds.QueryRetrieveLevel = 'PATIENT'
-ds.ScheduledProcedureStepSequence = [Dataset()]
-item = ds.ScheduledProcedureStepSequence[0]
-item.ScheduledStationAETitle = 'CTSCANNER'
-item.ScheduledProcedureStepStartDate = '20040119'
-item.Modality = 'CT'
+# # Create our Identifier (query) dataset
+# ds = Dataset()
+# ds.PatientName = 'Edo'
+# ds.QueryRetrieveLevel = 'PATIENT'
+# ds.ScheduledProcedureStepSequence = [Dataset()]
+# item = ds.ScheduledProcedureStepSequence[0]
+# item.ScheduledStationAETitle = 'CTSCANNER'
+# item.ScheduledProcedureStepStartDate = '20040119'
+# item.Modality = 'CT'
 
 # Associate with peer AE at IP 127.0.0.1 and port 11112
 assoc = ae.associate("localhost", 1234)
