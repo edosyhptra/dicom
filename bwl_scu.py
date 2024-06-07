@@ -13,6 +13,10 @@ ae.add_requested_context(ModalityWorklistInformationFind)
 # ae.add_requested_context(PatientRootQueryRetrieveInformationModelFind)
 
 # Create our Identifier (query) dataset
+# ds = Dataset()
+# ds.PatientName = 'CITIZEN^Jan'
+# ds.QueryRetrieveLevel = 'PATIENT'
+# # Create our Identifier (query) dataset
 ds = Dataset()
 ds.PatientName = 'Edo'
 ds.QueryRetrieveLevel = 'PATIENT'
