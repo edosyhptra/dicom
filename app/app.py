@@ -4,6 +4,10 @@ import os
 from configparser import ConfigParser
 import db
 
+from pydicom import dcmread
+from sqlalchemy.orm import sessionmaker
+
+
 from pydicom.uid import (
     ExplicitVRBigEndian,
     ExplicitVRLittleEndian,
@@ -30,7 +34,7 @@ from pynetdicom.sop_class import (
 
 # debug_logger()
 
-__aetitle__ = "Dicom project"
+__aetitle__ = "ANY-SCP"
 __version__ = "0.6.0"
 
 def _setup_argparser():
@@ -83,14 +87,14 @@ def _setup_argparser():
         metavar="[f]ile",
         help="override the location of the database using file f",
         type=str,
-        default="app/data/data.sqlite"
+        default="data.sqlite"
     )
     db_opts.add_argument(
         "--instance-location",
         metavar="[d]irectory",
         help=("override the configured instance storage location to directory d"),
         type=str,
-        default="app/data/"  # Default value set to "data/"
+        default="app/data/CTImageStorage.dcm"  # Default value set to "data/"
     )
     
     return parser.parse_args()
@@ -116,7 +120,13 @@ def main(args=None):
     # The path to the database
     db_path = f"sqlite:///{db_path}"
     print(db_path)
-    db.create(db_path)
+    engine = db.create(db_path)
+    session = sessionmaker(bind=engine)()
+
+    # Add instance to the database
+    ds = dcmread("app/data/CTImageStorage.dcm")
+    db.add_instance(ds, session)
+
     
     # Try to create the instance storage directory
     os.makedirs(instance_dir, exist_ok=True)
@@ -125,14 +135,14 @@ def main(args=None):
     ae.network_timeout = args.network_timeout
     
     # Basic Worklist
-    ae.add_supported_context(ModalityWorklistInformationFind)
-    ae.add_supported_context(PatientRootQueryRetrieveInformationModelFind)
+    ae.add_supported_context(ModalityWorklistInformationFind, ALL_TRANSFER_SYNTAXES)
+    ae.add_supported_context(PatientRootQueryRetrieveInformationModelFind, ALL_TRANSFER_SYNTAXES)
     
     #Verification or Echo
     ae.add_supported_context(Verification, ALL_TRANSFER_SYNTAXES)
 
     handlers = [
-        (evt.EVT_C_FIND, handle_find),
+        (evt.EVT_C_FIND, handle_find, [db_path, args]),
         (evt.EVT_C_ECHO, handle_echo),
     ]
     
