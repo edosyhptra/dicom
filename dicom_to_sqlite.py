@@ -27,7 +27,7 @@ DATASETS = {
 }
 # Connect database
 engine = db.create(
-    "sqlite:////Users/edosyahputra/Project/dicom/app/data.sqlite")
+    "sqlite:////Users/edosyahputra/Project/dicom/instances.sqlite")
 
 # ds = Dataset()
 # ds.PatientID = "1234"
@@ -40,12 +40,15 @@ session = sessionmaker(bind=engine)()
 
 # DATA_DIR = "app/data"
 """Test adding to the instance database."""
-ds = dcmread("app/data/baru.dcm")
+ds = dcmread("app/data/CTImageStorage.dcm")
+# ds = dcmread("instances.sqlite")
 db.add_instance(ds, session)
 
 obj = session.query(db.Instance).all()
 
 print(getattr(obj[0], "patient_name"))
+
+session.commit()
 
 # assert 1 == len(obj)
 # for kk, vv in DATASETS["CTImageStorage.dcm"].items():

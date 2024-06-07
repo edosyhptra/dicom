@@ -4,6 +4,10 @@ import os
 from configparser import ConfigParser
 import db
 
+from pydicom import dcmread
+from sqlalchemy.orm import sessionmaker
+
+
 from pydicom.uid import (
     ExplicitVRBigEndian,
     ExplicitVRLittleEndian,
@@ -90,7 +94,7 @@ def _setup_argparser():
         metavar="[d]irectory",
         help=("override the configured instance storage location to directory d"),
         type=str,
-        default="data/"  # Default value set to "data/"
+        default="app/data/CTImageStorage.dcm"  # Default value set to "data/"
     )
     
     return parser.parse_args()
@@ -116,7 +120,14 @@ def main(args=None):
     # The path to the database
     db_path = f"sqlite:///{db_path}"
     print(db_path)
-    db.create(db_path)
+    engine = db.create(db_path)
+    session = sessionmaker(bind=engine)()
+
+    # Add instance
+    ds = dcmread("app/data/CTImageStorage.dcm")
+    db.add_instance(ds, session)
+    # obj = session.query(db.Instance).all()
+
     
     # Try to create the instance storage directory
     os.makedirs(instance_dir, exist_ok=True)
