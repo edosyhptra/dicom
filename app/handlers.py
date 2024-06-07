@@ -36,7 +36,7 @@ def handle_echo(event):
 # Implement the handler for evt.EVT_C_FIND
 
 
-def handle_find(event, db_path, cli_config, logger):
+def handle_find(event, db_path, cli_config):
     """Handler for evt.EVT_C_FIND.
 
     Parameters
@@ -59,7 +59,8 @@ def handle_find(event, db_path, cli_config, logger):
     requestor = event.assoc.requestor
     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
     addr, port = requestor.address, requestor.port
-    logger.info(f"Received C-FIND request from {addr}:{port} at {timestamp}")
+    # logger.info(f"Received C-FIND request from {addr}:{port} at {timestamp}")
+    print(f"Received C-FIND request from {addr}:{port} at {timestamp}")
 
     model = event.request.AffectedSOPClassUID
     print(model)
@@ -80,14 +81,18 @@ def handle_find(event, db_path, cli_config, logger):
 
             except InvalidIdentifier as exc:
                 session.rollback()
-                logger.error("Invalid C-FIND Identifier received")
-                logger.error(str(exc))
+                # logger.error("Invalid C-FIND Identifier received")
+                # logger.error(str(exc))
+                print("Invalid C-FIND Identifier received")
+                print(str(exc))
                 yield 0xA900, None
                 return
             except Exception as exc:
                 session.rollback()
-                logger.error("Exception occurred while querying database")
-                logger.exception(exc)
+                # logger.error("Exception occurred while querying database")
+                # logger.exception(exc)
+                print("Exception occurred while querying database")
+                print(exc)
                 yield 0xC320, None
                 return
             finally:
@@ -103,116 +108,11 @@ def handle_find(event, db_path, cli_config, logger):
                 response = match.as_identifier(event.identifier, model)
                 response.RetrieveAETitle = event.assoc.ae.ae_title
             except Exception as exc:
-                logger.error("Error creating response Identifier")
-                logger.exception(exc)
+                # logger.error("Error creating response Identifier")
+                # logger.exception(exc)
+                print("Error creating response Identifier")
+                print(exc)
                 yield 0xC322, None
 
             yield 0xFF00, response
-# def handle_find(event):
-#     requestor = event.assoc.requestor
-#     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-#     addr, port = requestor.address, requestor.port
-#     print(f"Received C-FIND request from {addr}:{port} at {timestamp}")
-    
-#     model = event.request.AffectedSOPClassUID
-    
-#     if model.keyword in (
-#         "UnifiedProcedureStepPull",
-#         "ModalityWorklistInformationModelFind",
-#     ):
-#         print('model: ', model.keyword)
-#         print(event.identifier)
-#         yield 0x0000, None
-#     else:
-#         try:
-#             matches = search(model, event.identifier)
-        
-#         except InvalidIdentifier as exc:
-#             print('Invalid C-FIND Identifier received')
-#             print(str(exc))
-            
-#             yield 0x900, None
-#             return
-        
-#         except Exception as exc:
-#             print("Exception occurred while querying database")
-#             # lexc)
-#             print(exc)
-#             yield 0xC320, None
-            
-#             return
-        
-#         for match in matches:
-#             if event.is_cancelled:
-#                 yield 0xFE00, None
-#                 return
-#             try:
-#                 response = match.as_identifier(event.identifier, model)
-#                 response.RetrieveAETitle = event.assoc.ae.ae_title
-#             except Exception as exc:
-#                 print("Error creating response Identifier")
-#                 # logger.exception(exc)
-#                 yield 0xC322, None
 
-            
-#             yield 0xFF00, response
-#         # print('hello')
-#         # print("request accepted")
-        
-#         yield 0xFF00, None
-    
-    
-# def handle_find(event):
-#    # Implement the handler for evt.EVT_C_FIND
-
-# def handle_find(event):
-#     """Handle a C-FIND request event."""
-#     ds = event.identifier
-    
-#     print("Received C-FIND request")
-
-#     # Import stored SOP Instances
-#     # Import stored SOP Instances
-#     instances = []
-#     fdir = 'bwl/dataset/'
-#     print(os.listdir(fdir))
-#     for fpath in os.listdir(fdir):
-#         instances.append(dcmread(os.path.join(fdir, fpath)))
-#     # instances = []
-#     # fdir = 'dataset/CT_small.dcm'
-#     # instances.append(dcmread(fdir))
-#     # # for fpath in os.listdir(fdir):
-#     # #     instances.append(dcmread(os.path.join(fdir, fpath)))
-
-#     if 'ScheduledProcedureStepSequence' not in ds:
-#         print('failure')
-#         # Failure
-#         yield 0xC000, None
-#         return
-
-#     if 'ScheduledProcedureStepSequence' in ds:
-#         if 'PatientName' in ds:
-#             if ds.PatientName not in ['*', '', '?']:
-#                 matching = [
-#                     inst for inst in instances if inst.PatientName == ds.PatientName
-#                 ]
-
-#              # Skip the other possible values...
-
-#          # Skip the other possible attributes...
-
-#      # Skip the other QR levels...
-
-#     for instance in matching:
-#         # Check if C-CANCEL has been received
-#         if event.is_cancelled:
-#             yield (0xFE00, None)
-#             print('cancelled')
-#             return
-
-#         identifier = Dataset()
-#         identifier.PatientName = instance.PatientName
-#         # identifier.QueryRetrieveLevel = ds.QueryRetrieveLevel
-
-#         # Pending
-#         yield (0xFF00, identifier)

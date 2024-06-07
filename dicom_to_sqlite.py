@@ -41,7 +41,7 @@ session = sessionmaker(bind=engine)()
 # DATA_DIR = "app/data"
 """Test adding to the instance database."""
 ds = dcmread("app/data/CTImageStorage.dcm")
-# ds = dcmread("instances.sqlite")
+# ds = dcmread("instances.sqlite")s
 db.add_instance(ds, session)
 
 obj = session.query(db.Instance).all()

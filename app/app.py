@@ -34,7 +34,7 @@ from pynetdicom.sop_class import (
 
 # debug_logger()
 
-__aetitle__ = "Dicom project"
+__aetitle__ = "ANY-SCP"
 __version__ = "0.6.0"
 
 def _setup_argparser():
@@ -123,10 +123,9 @@ def main(args=None):
     engine = db.create(db_path)
     session = sessionmaker(bind=engine)()
 
-    # Add instance
+    # Add instance to the database
     ds = dcmread("app/data/CTImageStorage.dcm")
     db.add_instance(ds, session)
-    # obj = session.query(db.Instance).all()
 
     
     # Try to create the instance storage directory
@@ -143,7 +142,7 @@ def main(args=None):
     ae.add_supported_context(Verification, ALL_TRANSFER_SYNTAXES)
 
     handlers = [
-        (evt.EVT_C_FIND, handle_find),
+        (evt.EVT_C_FIND, handle_find, [db_path, args]),
         (evt.EVT_C_ECHO, handle_echo),
     ]
     
