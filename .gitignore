@@ -2,3 +2,4 @@ bwl/
 requirements.txt
 __pycache__/
 default.ini
+experiment/
