@@ -1,12 +1,14 @@
 import os
 from pydicom import dcmread
 from pydicom.dataset import Dataset
+from pynetdicom.sop_class import ModalityPerformedProcedureStep
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from db import add_instance, search, InvalidIdentifier, Instance
 
+managed_instances = {}
 
 # debug_logger()
 def handle_echo(event):
@@ -33,9 +35,138 @@ def handle_echo(event):
 
     return 0x0000
 
-# Implement the handler for evt.EVT_C_FIND
+# Implement the evt.EVT_N_CREATE handler
 
 
+def handle_create(event):
+    # MPPS' N-CREATE request must have an *Affected SOP Instance UID*
+    req = event.request
+    if req.AffectedSOPInstanceUID is None:
+        # Failed - invalid attribute value
+        return 0x0106, None
+
+    # Can't create a duplicate SOP Instance
+    if req.AffectedSOPInstanceUID in managed_instances:
+        # Failed - duplicate SOP Instance
+        return 0x0111, None
+
+    # The N-CREATE request's *Attribute List* dataset
+    attr_list = event.attribute_list
+
+    # Performed Procedure Step Status must be 'IN PROGRESS'
+    if "PerformedProcedureStepStatus" not in attr_list:
+        # Failed - missing attribute
+        return 0x0120, None
+    if attr_list.PerformedProcedureStepStatus.upper() != 'IN PROGRESS':
+        return 0x0106, None
+
+    # Skip other tests...
+
+    # Create a Modality Performed Procedure Step SOP Class Instance
+    #   DICOM Standard, Part 3, Annex B.17
+    ds = Dataset()
+
+    # Add the SOP Common module elements (Annex C.12.1)
+    ds.SOPClassUID = ModalityPerformedProcedureStep
+    ds.SOPInstanceUID = req.AffectedSOPInstanceUID
+
+    # Update with the requested attributes
+    ds.update(attr_list)
+
+    # Add the dataset to the managed SOP Instances
+    managed_instances[ds.SOPInstanceUID] = ds
+
+    # Return status, dataset
+    return 0x0000, ds
+    
+# Implement the evt.EVT_N_SET handler
+def handle_set(event):
+    req = event.request
+    if req.RequestedSOPInstanceUID not in managed_instances:
+        # Failure - SOP Instance not recognised
+        return 0x0112, None
+
+    ds = managed_instances[req.RequestedSOPInstanceUID]
+
+    # The N-SET request's *Modification List* dataset
+    mod_list = event.attribute_list
+
+    # Skip other tests...
+
+    ds.update(mod_list)
+
+    # Return status, dataset
+    return 0x0000, ds
+
+# def handle_create(event, db_path, cli_config):
+#     # MPPS' N-CREATE request must have an *Affected SOP Instance UID*
+#     requestor = event.assoc.requestor
+#     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+#     addr, port = requestor.address, requestor.port
+#     # logger.info(f"Received N-CREATE request from {addr}:{port} at {timestamp}")
+#     print(f"Received N-CREATE request from {addr}:{port} at {timestamp}")
+    
+#     req = event.request
+#     print('what is AffectedSOPInstance: ', req.AffectedSOPInstanceUID)
+#     if req.AffectedSOPInstanceUID is None:
+#         # Failed - invalid attribute value
+#         return 0x0106, None
+#     else:
+#         # engine = create_engine(db_path)
+#         # with engine.connect() as conn:
+#         #     Session = sessionmaker(bind=engine)
+#         #     session = Session()
+#         #     # Can't create a duplicate SOP Instance
+#         #     try:
+#         #         query = text(
+#         #             'SELECT COUNT(*) FROM sop_instances WHERE sop_instance_uid = :uid')
+#         #         existing_instance = session.execute(
+#         #             query, {'uid': req.AffectedSOPInstanceUID}).scalar()
+#         #     except Exception as exc:
+#         #         session.rollback()
+#         #         # logger.error("Exception occurred while querying database")
+#         #         # logger.exception(exc)
+#         #         print("Exception occurred while querying database")
+#         #         print(exc)
+#         #         yield 0xC320, None
+#         #         return
+#         #     finally:
+#         #         session.close()
+#         engine = create_engine(db_path)
+#         with engine.connect() as conn:
+#             Session = sessionmaker(bind=engine)
+#             session = Session()
+#         # # Yield results
+#         # if existing_instance > 0:
+#         #     # Failed - duplicate SOP Instance
+#         #     yield 0x0111, None
+#         #     return
+
+#             attr_list = event.attribute_list
+#             # Performed Procedure Step Status must be 'IN PROGRESS'
+#             if "PerformedProcedureStepStatus" not in attr_list:
+#                 # Failed - missing attribute
+#                 yield 0x0120, None
+#                 return
+#             if attr_list.PerformedProcedureStepStatus.upper() != 'IN PROGRESS':
+#                 yield 0x0106, None
+#                 return
+
+#             ds = Dataset()
+
+#             # Add the SOP Common module elements (Annex C.12.1)
+#             ds.SOPClassUID = ModalityPerformedProcedureStep
+#             ds.SOPInstanceUID = req.AffectedSOPInstanceUID
+
+#             # Update with the requested attributes
+#             ds.update(attr_list)
+#             print('=========================add instance...')
+#             add_instance(ds, session)
+#             print('=========================setelah add instance...')
+#             session.commit()
+        
+#         return 0x0000, ds
+            
 def handle_find(event, db_path, cli_config):
     """Handler for evt.EVT_C_FIND.
 

@@ -21,18 +21,19 @@ from pynetdicom import (
     ALL_TRANSFER_SYNTAXES,
 )
 
-from handlers import handle_find, handle_echo
+from handlers import handle_find, handle_echo, handle_create, handle_set
 
 # from pynetdicom.apps.common import setup_logging
 from pynetdicom.sop_class import (
     ModalityWorklistInformationFind,
     PatientRootQueryRetrieveInformationModelFind,
     Verification,
+    ModalityPerformedProcedureStep
 )
 # from pynetdicom._globals import ALL_TRANSFER_SYNTAXES, DEFAULT_MAX_LENGTH
 # from pynetdicom.utils import set_ae
 
-# debug_logger()
+debug_logger()
 
 __aetitle__ = "ANY-SCP"
 __version__ = "0.6.0"
@@ -123,11 +124,11 @@ def main(args=None):
     engine = db.create(db_path)
     session = sessionmaker(bind=engine)()
 
-    # Add instance to the database
+    # Add or update instance to the database
     ds = dcmread("app/data/CTImageStorage.dcm")
     db.add_instance(ds, session)
+    session.close()
 
-    
     # Try to create the instance storage directory
     os.makedirs(instance_dir, exist_ok=True)
     
@@ -138,12 +139,16 @@ def main(args=None):
     ae.add_supported_context(ModalityWorklistInformationFind, ALL_TRANSFER_SYNTAXES)
     ae.add_supported_context(PatientRootQueryRetrieveInformationModelFind, ALL_TRANSFER_SYNTAXES)
     
-    #Verification or Echo
+    # Verification or Echo
     ae.add_supported_context(Verification, ALL_TRANSFER_SYNTAXES)
+    
+    # MPPS
+    ae.add_supported_context(ModalityPerformedProcedureStep)
 
     handlers = [
+        (evt.EVT_N_CREATE, handle_create),
         (evt.EVT_C_FIND, handle_find, [db_path, args]),
-        (evt.EVT_C_ECHO, handle_echo),
+        (evt.EVT_C_ECHO, handle_echo)
     ]
     
     ae.start_server(
