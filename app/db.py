@@ -166,13 +166,13 @@ def add_instance(ds, session, fpath=None):
         .filter(Instance.sop_instance_uid == ds.SOPInstanceUID)
         .all()
     )
-    print('check result....')
+    # print('check result....')
     if result:
         instance = result[0]
-        print('di if result')
+        # print('di if result')
     else:
         instance = Instance()
-        print('else nya if result')
+        # print('else nya if result')
     
     print('result.....: ', instance)
     # Unique or Required attributes
@@ -196,9 +196,9 @@ def add_instance(ds, session, fpath=None):
     for attr, keyword, max_len, unique in required:
         if not unique and keyword not in ds:
             value = None
-            print('hello')
+            # print('hello'
         else:
-            print('hello2')
+            # print('hello2')
             print(ds[keyword])
             elem = ds[keyword]
             value = elem.value
