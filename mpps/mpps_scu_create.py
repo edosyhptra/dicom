@@ -29,9 +29,9 @@ def build_attr_list():
     step_seq[0].ScheduledProcedureStepID = "1"
     step_seq[0].ScheduledProcedureStepDescription = 'Some procedure step'
     step_seq[0].ScheduledProcedureProtocolCodeSequence = []
-    ds.PatientName = 'Test^Test'
-    ds.PatientID = '123456'
-    ds.PatientBirthDate = '20000101'
+    ds.PatientName = 'Edo'
+    ds.PatientID = '1234567'
+    ds.PatientBirthDate = '23101996'
     ds.PatientSex = 'O'
     ds.ReferencedPatientSequence = []
     # Performed Procedure Step Information

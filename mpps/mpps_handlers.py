@@ -45,6 +45,7 @@ def handle_create(event):
     # Add the SOP Common module elements (Annex C.12.1)
     ds.SOPClassUID = ModalityPerformedProcedureStep
     ds.SOPInstanceUID = req.AffectedSOPInstanceUID
+    print('SOP Instance UID: ', ds.SOPInstanceUID)
 
     # Update with the requested attributes
     ds.update(attr_list)
@@ -56,11 +57,16 @@ def handle_create(event):
     return 0x0000, ds
 
 # Implement the evt.EVT_N_SET handler
-
-
 def handle_set(event):
+    requestor = event.assoc.requestor
+    timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    addr, port = requestor.address, requestor.port
+    # logger.info(f"Received C-FIND request from {addr}:{port} at {timestamp}")
+    print(f"Received N-SET request from {addr}:{port} at {timestamp}")
+    
     req = event.request
     if req.RequestedSOPInstanceUID not in managed_instances:
+        print('SOP Instance not recognised')
         # Failure - SOP Instance not recognised
         return 0x0112, None
 
