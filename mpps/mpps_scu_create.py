@@ -29,9 +29,9 @@ def build_attr_list():
     step_seq[0].ScheduledProcedureStepID = "1"
     step_seq[0].ScheduledProcedureStepDescription = 'Some procedure step'
     step_seq[0].ScheduledProcedureProtocolCodeSequence = []
-    ds.PatientName = 'Edo'
-    ds.PatientID = '1234567'
-    ds.PatientBirthDate = '23101996'
+    ds.PatientName = 'Test^Test'
+    ds.PatientID = '123456'
+    ds.PatientBirthDate = '20000101'
     ds.PatientSex = 'O'
     ds.ReferencedPatientSequence = []
     # Performed Procedure Step Information
@@ -40,7 +40,7 @@ def build_attr_list():
     ds.PerformedStationName = 'Some station'
     ds.PerformedLocation = 'Some location'
     ds.PerformedProcedureStepStartDate = '20000101'
-    ds.PerformedProcedureStepStartTime = '1200'
+    ds.PerformedProcedureStepStartTime = '1300'
     ds.PerformedProcedureStepStatus = 'IN PROGRESS'
     ds.PerformedProcedureStepDescription = 'Some description'
     ds.PerformedProcedureTypeDescription = 'Some type'
@@ -73,6 +73,7 @@ if assoc.is_established:
         ModalityPerformedProcedureStep,
         mpps_instance_uid
     )
+    
 
     # Check the status of the display system request
     if status:
