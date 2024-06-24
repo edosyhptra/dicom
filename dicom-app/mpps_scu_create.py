@@ -1,14 +1,20 @@
+import json
+import sys
 from pydicom.dataset import Dataset
 from pydicom.uid import generate_uid
 
 from pynetdicom import AE, debug_logger
-from pynetdicom.sop_class import (
-    ModalityPerformedProcedureStep,
-    CTImageStorage
-)
+from pynetdicom.sop_class import ModalityPerformedProcedureStep
 from pynetdicom.status import code_to_category
 
-# debug_logger()
+# Function to read JSON file and return parsed data
+
+
+def read_json_file(json_file_path):
+    with open(json_file_path, 'r') as file:
+        data = json.load(file)
+    return data
+
 
 ct_study_uid = generate_uid()
 mpps_instance_uid = generate_uid()
@@ -16,7 +22,7 @@ mpps_instance_uid = generate_uid()
 # Our N-CREATE *Attribute List*
 
 
-def build_attr_list():
+def build_attr_list(patient_data):
     ds = Dataset()
     # Performed Procedure Step Relationship
     ds.ScheduledStepAttributesSequence = [Dataset()]
@@ -30,10 +36,13 @@ def build_attr_list():
     step_seq[0].ScheduledProcedureStepID = "1"
     step_seq[0].ScheduledProcedureStepDescription = 'Some procedure step'
     step_seq[0].ScheduledProcedureProtocolCodeSequence = []
-    ds.PatientName = 'Test^Test'
-    ds.PatientID = '123456'
-    ds.PatientBirthDate = '20000101'
-    ds.PatientSex = 'O'
+
+    # Use the patient data from the JSON file
+    ds.PatientName = patient_data['PatientName']
+    ds.PatientID = patient_data['PatientID']
+    ds.PatientBirthDate = patient_data['PatientBirthDate']
+    ds.PatientSex = patient_data['PatientSex']
+
     ds.ReferencedPatientSequence = []
     # Performed Procedure Step Information
     ds.PerformedProcedureStepID = "1"
@@ -56,40 +65,51 @@ def build_attr_list():
 
     return ds
 
+# Main function to run the script
 
-# Initialise the Application Entity
-ae = AE()
 
-# Add a requested presentation context
-ae.add_requested_context(ModalityPerformedProcedureStep)
+def main(json_file_path):
+    patient_data = read_json_file(json_file_path)
 
-# Associate with peer AE at IP 127.0.0.1 and port 11112
-assoc = ae.associate("127.0.0.1", 1234)
+    # Initialise the Application Entity
+    ae = AE()
 
-if assoc.is_established:
-    # Use the N-CREATE service to send a request to create a SOP Instance
-    # should return the Instance itself
-    status, attr_list = assoc.send_n_create(
-        build_attr_list(),
-        ModalityPerformedProcedureStep,
-        mpps_instance_uid
-    )
-    
+    # Add a requested presentation context
+    ae.add_requested_context(ModalityPerformedProcedureStep)
 
-    # Check the status of the display system request
-    if status:
-        print('N-CREATE request status: 0x{0:04x}'.format(status.Status))
+    # Associate with peer AE at IP 127.0.0.1 and port 1234
+    assoc = ae.associate("127.0.0.1", 1234)
 
-        # If the MPPS request succeeded the status category may
-        # be either Success or Warning
-        category = code_to_category(status.Status)
-        if category in ['Warning', 'Success']:
-            # `attr_list` is a pydicom Dataset containing attribute values
-            print(attr_list)
+    if assoc.is_established:
+        # Use the N-CREATE service to send a request to create a SOP Instance
+        # should return the Instance itself
+        status, attr_list = assoc.send_n_create(
+            build_attr_list(patient_data),
+            ModalityPerformedProcedureStep,
+            mpps_instance_uid
+        )
+
+        # Check the status of the display system request
+        if status:
+            print('N-CREATE request status: 0x{0:04x}'.format(status.Status))
+
+            # If the MPPS request succeeded the status category may
+            # be either Success or Warning
+            category = code_to_category(status.Status)
+            if category in ['Warning', 'Success']:
+                # `attr_list` is a pydicom Dataset containing attribute values
+                print(attr_list)
+        else:
+            print('Connection timed out, was aborted or received invalid response')
+
+        # Release the association
+        assoc.release()
     else:
-        print('Connection timed out, was aborted or received invalid response')
+        print('Association rejected, aborted or never connected')
 
-    # Release the association
-    assoc.release()
-else:
-    print('Association rejected, aborted or never connected')
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python3 mpps_scu_create.py <json_file_path>")
+    else:
+        main(sys.argv[1])
