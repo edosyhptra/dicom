@@ -15,7 +15,7 @@ from pynetdicom.status import code_to_category
 ct_series_uid = generate_uid()
 ct_instance_uids = [generate_uid() for ii in range(10)]
 ct_study_uid = generate_uid()
-mpps_instance_uid = "1.2.826.0.1.3680043.8.498.58190338405871021367543909054140458108"
+mpps_instance_uid = "1.2.826.0.1.3680043.8.498.86402066722247823555608301269597029823"
 # Our N-SET *Modification List*
 
 def build_mod_list(series_instance, sop_instances):

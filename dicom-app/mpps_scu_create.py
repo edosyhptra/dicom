@@ -26,6 +26,7 @@ def build_attr_list():
     step_seq[0].AccessionNumber = '1'
     step_seq[0].RequestedProcedureID = "1"
     step_seq[0].RequestedProcedureDescription = 'Some procedure'
+    step_seq[0].ScheduledProcedureStepStartDate = '20181005'
     step_seq[0].ScheduledProcedureStepID = "1"
     step_seq[0].ScheduledProcedureStepDescription = 'Some procedure step'
     step_seq[0].ScheduledProcedureProtocolCodeSequence = []
