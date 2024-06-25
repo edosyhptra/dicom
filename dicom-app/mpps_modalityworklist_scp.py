@@ -105,7 +105,17 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         # Validate the received data
         required_fields = ['PatientName', 'PatientID',
-                           'PatientBirthDate', 'PatientSex']
+                           'PatientBirthDate', 'PatientSex',
+                           'StudyID', 'AccessionNumber',
+                           'ReferringPhysician', 'StudyDescription',
+                           'ScheduledProcedureStepStartDate',
+                           'Modality', 'RequestedProcedureID',
+                           'RequestedProcedureDescription',
+                           'ScheduledStationAETitle',
+                           'ScheduledPerformingPhysician',
+                           'ScheduledProcedureStepLocation',
+                           'PreMedication', 'SpecialNeeds']
+
         if all(field in patient_data for field in required_fields):
             # Respond that the data was received
             response = {
@@ -116,18 +126,22 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps(response).encode())
+            
+           # Write the JSON data to the specified file
+            json_file_path = 'dummy-data/data1.json'
+            os.makedirs(os.path.dirname(json_file_path), exist_ok=True)
+            with open(json_file_path, 'w') as json_file:
+                json.dump(patient_data, json_file)
 
-            # Write the JSON data to a temporary file
-            with tempfile.NamedTemporaryFile(delete=False, mode='w', suffix='.json') as temp_file:
-                json.dump(patient_data, temp_file)
-                temp_file_path = temp_file.name
-
+            # Save the JSON file data into managed_instances dict
+            hd.save_into_managed_instances(json_file_path)
+            
             # Execute the external script with the temporary file path
-            try:
-                subprocess.run(["python3", "mpps_scu_create.py",
-                               temp_file_path], check=True)
-            except subprocess.CalledProcessError as e:
-                print(f"Error running external script: {e}")
+            # try:
+            #     subprocess.run(["python3", "mpps_scu_create.py",
+            #                    temp_file_path], check=True)
+            # except subprocess.CalledProcessError as e:
+            #     print(f"Error running external script: {e}")
         else:
             response = {
                 "message": "Invalid data format",
@@ -140,32 +154,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 # Function to start the HTTP server
 def start_http_server():
-    server_address = ('10.20.187.61', 8080)
+    server_address = ('localhost', 8080)
     httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
     print("HTTP server running on port 8080")
     httpd.serve_forever()
 
 # Function to start the DICOM AE server
-def start_dicom_ae(args):
-    # Use default or specified configuration file
-    current_dir = os.path.abspath(os.path.dirname(__file__))
-    instance_dir = os.path.join(current_dir, args.instance_location)
-    db_path = os.path.join(current_dir, args.database_location)
-
-    # # The path to the database
-    # db_path = f"sqlite:///{db_path}"
-    # print(db_path)
-    # # db.create(db_path)
-    # engine = db.create(db_path)
-    # session = sessionmaker(bind=engine)()
-
-    # # # Add or update instance to the database
-    # ds = dcmread("../app/data/CT_small.dcm")
-    # db.add_instance(ds, session)
-    # session.close()
-
-    # # Try to create the instance storage directory
-    # os.makedirs(instance_dir, exist_ok=True)
+def start_dicom_ae():
     
     ae = AE(ae_title=__aetitle__)
 
@@ -176,27 +171,22 @@ def start_dicom_ae(args):
 
     handlers = [(evt.EVT_N_CREATE, hd.handle_create),
                 (evt.EVT_N_SET, hd.handle_set),
-                (evt.EVT_C_FIND, hd.handle_find, [db_path, args])]
-
+                (evt.EVT_C_FIND, hd.handle_find)]
+    
+    # Generate dummy data
+    # hd.generate_dummy_data()
+    
     # Start listening for incoming association requests
     print("DICOM AE server running on port 1234")
     ae.start_server(("127.0.0.1", 1234), evt_handlers=handlers)
     
-def main(args=None):
-    if args is not None:
-        sys.argv = args
-
-    args = _setup_argparser()
-    
+# Run both servers in parallel
+if __name__ == "__main__":
     http_thread = threading.Thread(target=start_http_server)
-    dicom_thread = threading.Thread(target=start_dicom_ae(args))
+    dicom_thread = threading.Thread(target=start_dicom_ae)
 
     http_thread.start()
     dicom_thread.start()
 
     http_thread.join()
     dicom_thread.join()
-
-# Run both servers in parallel
-if __name__ == "__main__":
-    main()
