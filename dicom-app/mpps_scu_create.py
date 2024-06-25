@@ -8,8 +8,6 @@ from pynetdicom.sop_class import ModalityPerformedProcedureStep
 from pynetdicom.status import code_to_category
 
 # Function to read JSON file and return parsed data
-
-
 def read_json_file(json_file_path):
     with open(json_file_path, 'r') as file:
         data = json.load(file)
@@ -20,8 +18,6 @@ ct_study_uid = generate_uid()
 mpps_instance_uid = generate_uid()
 
 # Our N-CREATE *Attribute List*
-
-
 def build_attr_list(patient_data):
     ds = Dataset()
     # Performed Procedure Step Relationship
@@ -38,10 +34,10 @@ def build_attr_list(patient_data):
     step_seq[0].ScheduledProcedureProtocolCodeSequence = []
 
     # Use the patient data from the JSON file
-    ds.PatientName = patient_data['PatientName']
-    ds.PatientID = patient_data['PatientID']
-    ds.PatientBirthDate = patient_data['PatientBirthDate']
-    ds.PatientSex = patient_data['PatientSex']
+    ds.PatientName = 'Edo' #patient_data['PatientName']
+    ds.PatientID = '1' #patient_data['PatientID']
+    ds.PatientBirthDate =  '23101996'#patient_data['PatientBirthDate']
+    ds.PatientSex = '0'#patient_data['PatientSex']
 
     ds.ReferencedPatientSequence = []
     # Performed Procedure Step Information

@@ -1,50 +1,135 @@
 from pydicom.dataset import Dataset
+# import requests
 
 from pynetdicom.sop_class import ModalityPerformedProcedureStep
+from db import add_instance, search, InvalidIdentifier, Instance
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
 managed_instances = {}
 
 # Implement the handler for evt.EVT_C_FIND
-def handle_find(event):
-    """Handle a C-FIND request event."""
+def handle_find(event, db_path, cli_config):
+    """Handler for evt.EVT_C_FIND.
+
+    Parameters
+    ----------
+    event : pynetdicom.events.Event
+        The C-FIND request :class:`~pynetdicom.events.Event`.
+    db_path : str
+        The database path to use with create_engine().
+    cli_config : dict
+        A :class:`dict` containing configuration settings passed via CLI.
+    logger : logging.Logger
+        The application's logger.
+
+    Yields
+    ------
+    int or pydicom.dataset.Dataset, pydicom.dataset.Dataset or None
+        The C-FIND response's *Status* and if the *Status* is pending then
+        the dataset to be sent, otherwise ``None``.
+    """
     requestor = event.assoc.requestor
-    req = event.request
-    model =event.request.AffectedSOPClassUID
     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
     addr, port = requestor.address, requestor.port
     # logger.info(f"Received C-FIND request from {addr}:{port} at {timestamp}")
     print(f"Received C-FIND request from {addr}:{port} at {timestamp}")
-    
-    ds = event.identifier
-    item = ds.ScheduledStepAttributesSequence
-    # print(item[0].ScheduledProcedureStepStartDate)
-    
-    if 'ScheduledStepAttributesSequence' not in ds:
-        # Failure
-        yield 0xC000, None
-        return
-    
-    for uid, instance in managed_instances.items():
-        ScheduleStep = instance.get('ScheduledStepAttributesSequence')
-        matching = [
-            inst for inst in ScheduleStep if inst.ScheduledProcedureStepStartDate == item[0].ScheduledProcedureStepStartDate
-        ]
-    
-    for instance in matching:
-        # Check if C-CANCEL has been received
-        if event.is_cancelled:
-             yield (0xFE00, None)
-             return
 
-        identifier = Dataset()
-        identifier.ScheduledStepAttributesSequence = [Dataset()]
-        item = identifier.ScheduledStepAttributesSequence
-        # item.ScheduledStationAETitle = 'CTSCANNER'
-        item[0].ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate
+    model = event.request.AffectedSOPClassUID
+    print(model)
 
-        # Pending
-        yield (0xFF00, identifier)
+    if model.keyword in (
+        "UnifiedProcedureStepPull",
+        "ModalityWorklistInformationModelFind",
+    ):
+        yield 0x0000, None
+    else:
+        engine = create_engine(db_path)
+        with engine.connect() as conn:  # noqa: F841
+            Session = sessionmaker(bind=engine)
+            session = Session()
+            # Search database using Identifier as the query
+            try:
+                matches = search(model, event.identifier, session)
 
+            except InvalidIdentifier as exc:
+                session.rollback()
+                # logger.error("Invalid C-FIND Identifier received")
+                # logger.error(str(exc))
+                print("Invalid C-FIND Identifier received")
+                print(str(exc))
+                yield 0xA900, None
+                return
+            except Exception as exc:
+                session.rollback()
+                # logger.error("Exception occurred while querying database")
+                # logger.exception(exc)
+                print("Exception occurred while querying database")
+                print(exc)
+                yield 0xC320, None
+                return
+            finally:
+                session.close()
+
+        # Yield results
+        for match in matches:
+            print('============')
+            print(match)
+            if event.is_cancelled:
+                yield 0xFE00, None
+                return
+
+            try:
+                response = match.as_identifier(event.identifier, model)
+                response.RetrieveAETitle = event.assoc.ae.ae_title
+            except Exception as exc:
+                # logger.error("Error creating response Identifier")
+                # logger.exception(exc)
+                print("Error creating response Identifier")
+                print(exc)
+                yield 0xC322, None
+
+            yield 0xFF00, response
+         
+# def handle_find2(event):
+#     """Handle a C-FIND request event."""
+#     requestor = event.assoc.requestor
+#     req = event.request
+#     model =event.request.AffectedSOPClassUID
+#     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+#     addr, port = requestor.address, requestor.port
+#     # logger.info(f"Received C-FIND request from {addr}:{port} at {timestamp}")
+#     print(f"Received C-FIND request from {addr}:{port} at {timestamp}")
+    
+#     ds = event.identifier
+#     item = ds.ScheduledStepAttributesSequence
+#     # print(item[0].ScheduledProcedureStepStartDate)
+    
+#     if 'ScheduledStepAttributesSequence' not in ds:
+#         # Failure
+#         yield 0xC000, None
+#         return
+    
+#     for uid, instance in managed_instances.items():
+#         ScheduleStep = instance.get('ScheduledStepAttributesSequence')
+#         matching = [
+#             inst for inst in ScheduleStep if inst.ScheduledProcedureStepStartDate == item[0].ScheduledProcedureStepStartDate
+#         ]
+    
+#     for instance in matching:
+#         # Check if C-CANCEL has been received
+#         if event.is_cancelled:
+#              yield (0xFE00, None)
+#              return
+
+#         identifier = Dataset()
+#         identifier.ScheduledStepAttributesSequence = [Dataset()]
+#         item = identifier.ScheduledStepAttributesSequence
+#         # item.ScheduledStationAETitle = 'CTSCANNER'
+#         item[0].ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate
+
+#         # Pending
+#         yield (0xFF00, identifier)
 
 # Implement the evt.EVT_N_CREATE handler
 def handle_create(event):
@@ -130,6 +215,23 @@ def handle_set(event):
 
     ds.update(mod_list)
     print('Patient Name: ', event.attribute_list)
+    
+    # # Convert the dataset to JSON
+    # json_payload = ds.to_json()
+
+    # # Send the JSON payload to the server
+    # url = "http://your-server-url.com/endpoint"  # Replace with your server URL
+    # headers = {'Content-Type': 'application/json'}
+    # response = requests.post(url, data=json_payload, headers=headers)
+    # # Check response from the server
+    # if response.status_code == 200:
+    #     print('Successfully sent dataset to server.')
+    # else:
+    #     print(
+    #         f'Failed to send dataset to server. Status code: {response.status_code}')
+
+    # Return success status and updated dataset
+    return 0x0000, ds
 
     # Return status, dataset
     return 0x0000, ds

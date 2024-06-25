@@ -6,12 +6,87 @@ import tempfile
 from pydicom.dataset import Dataset
 from pydicom.uid import generate_uid
 from pynetdicom import AE, evt
-from pynetdicom.sop_class import ModalityPerformedProcedureStep, ModalityWorklistInformationFind
+from pynetdicom.sop_class import (
+    ModalityPerformedProcedureStep, 
+    ModalityWorklistInformationFind,
+    PatientRootQueryRetrieveInformationModelFind,
+)
+
 import handlers as hd
+import argparse
+import os
+import db
+from sqlalchemy.orm import sessionmaker
+from pydicom import dcmread
+
+import sys
+
+__aetitle__ = "admin-scp"
+__version__ = "0.6.0"
+
+def _setup_argparser():
+    parser = argparse.ArgumentParser(
+        description=(
+            "program for dicom. adapted from pynetdicom "
+        ),
+        usage="storescp [options] port",
+    )
+
+    # Parameters
+    req_opts = parser.add_argument_group("Parameters")
+    req_opts.add_argument(
+        "-p", "--port", default=1234, help="TCP/IP port number to listen on",
+        type=int)
+
+    # Network Options
+    net_opts = parser.add_argument_group("Network Options")
+    net_opts.add_argument(
+        "-aet",
+        "--ae-title",
+        metavar="[a]etitle",
+        help="override the configured AE title",
+        default=__aetitle__
+    )
+    net_opts.add_argument(
+        "-tn",
+        "--network-timeout",
+        metavar="[s]econds",
+        help="timeout for the network (default: 30 s)",
+        type=float,
+        default=30,
+        required=False
+    )
+    net_opts.add_argument(
+        "-ba",
+        "--bind-address",
+        metavar="[a]ddress",
+        help=(
+            "The address of the network interface to "
+            "listen on. If unset, listen on all interfaces."
+        ),
+        default="localhost",
+    )
+
+    # Database
+    db_opts = parser.add_argument_group("Database Options")
+    db_opts.add_argument(
+        "--database-location",
+        metavar="[f]ile",
+        help="override the location of the database using file f",
+        type=str,
+        default="data.sqlite"
+    )
+    db_opts.add_argument(
+        "--instance-location",
+        metavar="[d]irectory",
+        help=("override the configured instance storage location to directory d"),
+        type=str,
+        default="app/data/CTImageStorage.dcm"  # Default value set to "data/"
+    )
+
+    return parser.parse_args()
 
 # Handlers for HTTP requests
-
-
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -64,40 +139,64 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(response).encode())
 
 # Function to start the HTTP server
-
-
 def start_http_server():
-    server_address = ('127.0.0.1', 8080)
+    server_address = ('10.20.187.61', 8080)
     httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
     print("HTTP server running on port 8080")
     httpd.serve_forever()
 
 # Function to start the DICOM AE server
+def start_dicom_ae(args):
+    # Use default or specified configuration file
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    instance_dir = os.path.join(current_dir, args.instance_location)
+    db_path = os.path.join(current_dir, args.database_location)
 
+    # # The path to the database
+    # db_path = f"sqlite:///{db_path}"
+    # print(db_path)
+    # # db.create(db_path)
+    # engine = db.create(db_path)
+    # session = sessionmaker(bind=engine)()
 
-def start_dicom_ae():
-    ae = AE(ae_title='admin-scp')
+    # # # Add or update instance to the database
+    # ds = dcmread("../app/data/CT_small.dcm")
+    # db.add_instance(ds, session)
+    # session.close()
+
+    # # Try to create the instance storage directory
+    # os.makedirs(instance_dir, exist_ok=True)
+    
+    ae = AE(ae_title=__aetitle__)
 
     # Add the supported presentation context
     ae.add_supported_context(ModalityPerformedProcedureStep)
     ae.add_supported_context(ModalityWorklistInformationFind)
+    ae.add_supported_context(PatientRootQueryRetrieveInformationModelFind)
 
     handlers = [(evt.EVT_N_CREATE, hd.handle_create),
                 (evt.EVT_N_SET, hd.handle_set),
-                (evt.EVT_C_FIND, hd.handle_find)]
+                (evt.EVT_C_FIND, hd.handle_find, [db_path, args])]
 
     # Start listening for incoming association requests
     print("DICOM AE server running on port 1234")
     ae.start_server(("127.0.0.1", 1234), evt_handlers=handlers)
+    
+def main(args=None):
+    if args is not None:
+        sys.argv = args
 
-
-# Run both servers in parallel
-if __name__ == "__main__":
+    args = _setup_argparser()
+    
     http_thread = threading.Thread(target=start_http_server)
-    dicom_thread = threading.Thread(target=start_dicom_ae)
+    dicom_thread = threading.Thread(target=start_dicom_ae(args))
 
     http_thread.start()
     dicom_thread.start()
 
     http_thread.join()
     dicom_thread.join()
+
+# Run both servers in parallel
+if __name__ == "__main__":
+    main()
