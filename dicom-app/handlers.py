@@ -1,5 +1,6 @@
 from pydicom.dataset import Dataset
 # import requests
+import json
 
 from pynetdicom.sop_class import ModalityPerformedProcedureStep
 from db import add_instance, search, InvalidIdentifier, Instance
@@ -8,128 +9,139 @@ from sqlalchemy.orm import sessionmaker
 
 managed_instances = {}
 
-# Implement the handler for evt.EVT_C_FIND
-def handle_find(event, db_path, cli_config):
-    """Handler for evt.EVT_C_FIND.
+# Function to load JSON data and convert it to a Dataset
+def load_worklist_from_json(json_data):
+    ds = Dataset()
+    ds.PatientName = json_data['PatientName']
+    ds.PatientID = json_data['PatientID']
+    ds.PatientBirthDate = json_data['PatientBirthDate']
+    ds.PatientSex = json_data['PatientSex']
+    ds.StudyID = json_data['StudyID']
+    ds.AccessionNumber = json_data['AccessionNumber']
+    ds.ReferringPhysicianName = json_data['ReferringPhysician']
+    ds.StudyDescription = json_data['StudyDescription']
 
-    Parameters
-    ----------
-    event : pynetdicom.events.Event
-        The C-FIND request :class:`~pynetdicom.events.Event`.
-    db_path : str
-        The database path to use with create_engine().
-    cli_config : dict
-        A :class:`dict` containing configuration settings passed via CLI.
-    logger : logging.Logger
-        The application's logger.
+    ds.ScheduledProcedureStepSequence = [Dataset()]
+    scheduled_procedure_step = ds.ScheduledProcedureStepSequence[0]
+    scheduled_procedure_step.ScheduledProcedureStepStartDate = json_data[
+        'ScheduledProcedureStepStartDate']
+    scheduled_procedure_step.Modality = json_data['Modality']
+    scheduled_procedure_step.ScheduledStationAETitle = json_data['ScheduledStationAETitle']
+    scheduled_procedure_step.ScheduledPerformingPhysicianName = json_data[
+        'ScheduledPerformingPhysician']
+    scheduled_procedure_step.ScheduledProcedureStepLocation = json_data[
+        'ScheduledProcedureStepLocation']
+    scheduled_procedure_step.PreMedication = json_data['PreMedication']
 
-    Yields
-    ------
-    int or pydicom.dataset.Dataset, pydicom.dataset.Dataset or None
-        The C-FIND response's *Status* and if the *Status* is pending then
-        the dataset to be sent, otherwise ``None``.
-    """
+    ds.ScheduledProcedureStepSequence = [scheduled_procedure_step]
+    ds.RequestedProcedureID = json_data['RequestedProcedureID']
+    ds.RequestedProcedureDescription = json_data['RequestedProcedureDescription']
+    ds.SpecialNeeds = json_data['SpecialNeeds']
+
+    return ds
+
+def generate_dummy_data():
+    # Load the dummy worklist JSON data
+    with open('dummy_data/data.json', 'r') as file:
+        worklist_data = json.load(file)
+
+    # Convert JSON data to Dataset
+    ds = load_worklist_from_json(worklist_data)
+
+    # Assign the dataset to managed_instances[0]
+    # Assuming managed_instances is a list with at least one element
+    managed_instances[0] = ds
+
+    # Print out the dataset to verify
+    print(managed_instances[0])
+    
+def save_into_managed_instances(json_file_path):
+    """Save the JSON file data into the managed_instances dictionary."""
+    with open(json_file_path, 'r') as json_file:
+        worklist_data = json.load(json_file)
+        
+    # Convert JSON data to Dataset
+    ds = load_worklist_from_json(worklist_data)
+
+    # Assign the dataset to managed_instances[0]
+    # Assuming managed_instances is a list with at least one element
+    managed_instances[0] = ds
+
+    # Print out the dataset to verify
+    print(managed_instances[0])
+    
+    
+
+def handle_find(event):
+    """Handle a C-FIND request event."""
     requestor = event.assoc.requestor
+    req = event.request
+    model =event.request.AffectedSOPClassUID
+    ds = event.identifier
     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
     addr, port = requestor.address, requestor.port
     # logger.info(f"Received C-FIND request from {addr}:{port} at {timestamp}")
     print(f"Received C-FIND request from {addr}:{port} at {timestamp}")
-
-    model = event.request.AffectedSOPClassUID
-    print(model)
-
-    if model.keyword in (
-        "UnifiedProcedureStepPull",
-        "ModalityWorklistInformationModelFind",
-    ):
-        yield 0x0000, None
-    else:
-        engine = create_engine(db_path)
-        with engine.connect() as conn:  # noqa: F841
-            Session = sessionmaker(bind=engine)
-            session = Session()
-            # Search database using Identifier as the query
-            try:
-                matches = search(model, event.identifier, session)
-
-            except InvalidIdentifier as exc:
-                session.rollback()
-                # logger.error("Invalid C-FIND Identifier received")
-                # logger.error(str(exc))
-                print("Invalid C-FIND Identifier received")
-                print(str(exc))
-                yield 0xA900, None
-                return
-            except Exception as exc:
-                session.rollback()
-                # logger.error("Exception occurred while querying database")
-                # logger.exception(exc)
-                print("Exception occurred while querying database")
-                print(exc)
-                yield 0xC320, None
-                return
-            finally:
-                session.close()
-
-        # Yield results
-        for match in matches:
-            print('============')
-            print(match)
-            if event.is_cancelled:
-                yield 0xFE00, None
-                return
-
-            try:
-                response = match.as_identifier(event.identifier, model)
-                response.RetrieveAETitle = event.assoc.ae.ae_title
-            except Exception as exc:
-                # logger.error("Error creating response Identifier")
-                # logger.exception(exc)
-                print("Error creating response Identifier")
-                print(exc)
-                yield 0xC322, None
-
-            yield 0xFF00, response
-         
-# def handle_find2(event):
-#     """Handle a C-FIND request event."""
-#     requestor = event.assoc.requestor
-#     req = event.request
-#     model =event.request.AffectedSOPClassUID
-#     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-#     addr, port = requestor.address, requestor.port
-#     # logger.info(f"Received C-FIND request from {addr}:{port} at {timestamp}")
-#     print(f"Received C-FIND request from {addr}:{port} at {timestamp}")
     
-#     ds = event.identifier
-#     item = ds.ScheduledStepAttributesSequence
-#     # print(item[0].ScheduledProcedureStepStartDate)
+    if 'ScheduledProcedureStepSequence' not in ds:
+        # Failure
+        yield 0xC000, None
     
-#     if 'ScheduledStepAttributesSequence' not in ds:
-#         # Failure
-#         yield 0xC000, None
-#         return
-    
-#     for uid, instance in managed_instances.items():
-#         ScheduleStep = instance.get('ScheduledStepAttributesSequence')
-#         matching = [
-#             inst for inst in ScheduleStep if inst.ScheduledProcedureStepStartDate == item[0].ScheduledProcedureStepStartDate
-#         ]
-    
-#     for instance in matching:
-#         # Check if C-CANCEL has been received
-#         if event.is_cancelled:
-#              yield (0xFE00, None)
-#              return
+    # item = ds.ScheduledStepAttributesSequence
+    item = ds.ScheduledProcedureStepSequence
+    schedule = item[0].ScheduledProcedureStepStartDate
+    ae_title = item[0].ScheduledStationAETitle
 
-#         identifier = Dataset()
-#         identifier.ScheduledStepAttributesSequence = [Dataset()]
-#         item = identifier.ScheduledStepAttributesSequence
-#         # item.ScheduledStationAETitle = 'CTSCANNER'
-#         item[0].ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate
+    for uid, instance in managed_instances.items():
+        ScheduledProcedure = instance.get('ScheduledProcedureStepSequence')
+        matching = [
+            inst for inst in ScheduledProcedure if inst.ScheduledProcedureStepStartDate == schedule or inst.ScheduledAETitle == ae_title
+        ]
+    
+    for instance in matching:
+        # Check if C-CANCEL has been received
+        if event.is_cancelled:
+             yield (0xFE00, None)
+             return
+        
+        # identifier = Dataset()
+        # identifier.PatientName = ds.PatientName
+        # identifier.ScheduledProcedureStepSequence = [Dataset()]
+        # identifier.ScheduledStationAETitle = instance.ScheduledStationAETitle
+        # identifier.ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate
+        # identifier.Modality = instance.Modality
+        
+        # Create the identifier dataset
+        identifier = Dataset()
+        identifier.PatientName = ds.PatientName
+        # identifier.PatientID = ds.PatientID
+        # identifier.PatientBirthDate = ds.PatientBirthDate
+        # identifier.PatientSex = ds.PatientSex
+        # identifier.StudyID = ds.StudyID
+        # identifier.AccessionNumber = ds.AccessionNumber
+        # identifier.ReferringPhysicianName = ds.ReferringPhysician
+        # identifier.StudyDescription = ds.StudyDescription
+        
+        # Create the ScheduledProcedureStepSequence dataset
+        identifier.ScheduledProcedureStepSequence = [Dataset()]
+        scheduled_procedure_step = identifier.ScheduledProcedureStepSequence[0]
+        scheduled_procedure_step.ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate
+        scheduled_procedure_step.Modality = instance.Modality
+        scheduled_procedure_step.ScheduledStationAETitle = instance.ScheduledStationAETitle
+        scheduled_procedure_step.ScheduledPerformingPhysicianName = instance.ScheduledPerformingPhysicianName
+        scheduled_procedure_step.ScheduledProcedureStepLocation = instance.ScheduledProcedureStepLocation
+        scheduled_procedure_step.PreMedication = instance.PreMedication
+        
+        # Add the ScheduledProcedureStepSequence to the identifier
+        identifier.ScheduledProcedureStepSequence = [scheduled_procedure_step]
 
-#         # Pending
-#         yield (0xFF00, identifier)
+        # Continue adding the remaining fields directly to the identifier
+        # identifier.RequestedProcedureID = instance.RequestedProcedureID
+        # identifier.RequestedProcedureDescription = instance.RequestedProcedureDescription
+        # identifier.SpecialNeeds = instance.SpecialNeeds
+        
+        # Pending
+        yield (0xFF00, identifier)
 
 # Implement the evt.EVT_N_CREATE handler
 def handle_create(event):

@@ -62,8 +62,6 @@ def build_attr_list(patient_data):
     return ds
 
 # Main function to run the script
-
-
 def main(json_file_path):
     patient_data = read_json_file(json_file_path)
 
