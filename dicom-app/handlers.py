@@ -83,16 +83,13 @@ def handle_find(event):
         # Failure invalid request
         yield 0xC000, None
     
-    # item = ds.ScheduledStepAttributesSequence
     item = ds.ScheduledProcedureStepSequence
-    # schedule = item[0].ScheduledProcedureStepStartDate
     ae_title = item[0].ScheduledStationAETitle
     
     matching = []
 
     for uid, instance in managed_instances.items():
         ScheduledProcedure = instance.get('ScheduledProcedureStepSequence')
-        patientName = instance.PatientName
         
         found = [
             inst for inst in ScheduledProcedure if inst.ScheduledStationAETitle == ae_title  # noqa: E501
@@ -100,6 +97,8 @@ def handle_find(event):
         
         if found:
             matching = found
+            patientName = instance.PatientName
+            
     
     for instance in matching:
         # Check if C-CANCEL has been received

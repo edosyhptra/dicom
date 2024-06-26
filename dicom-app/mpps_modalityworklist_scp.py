@@ -1,10 +1,6 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
 import json
-import subprocess
-import tempfile
-from pydicom.dataset import Dataset
-from pydicom.uid import generate_uid
 from pynetdicom import AE, evt
 from pynetdicom.sop_class import (
     ModalityPerformedProcedureStep, 
@@ -15,11 +11,6 @@ from pynetdicom.sop_class import (
 import handlers as hd
 import argparse
 import os
-import db
-from sqlalchemy.orm import sessionmaker
-from pydicom import dcmread
-
-import sys
 
 __aetitle__ = "admin-scp"
 __version__ = "0.6.0"
