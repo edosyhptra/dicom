@@ -3,17 +3,14 @@ from pydicom.dataset import Dataset
 import json
 
 from pynetdicom.sop_class import ModalityPerformedProcedureStep
-from db import add_instance, search, InvalidIdentifier, Instance
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 
 managed_instances = {}
 
 # Function to load JSON data and convert it to a Dataset
 def load_worklist_from_json(json_data):
     ds = Dataset()
-    ds.PatientName = json_data['PatientName']
     ds.PatientID = json_data['PatientID']
+    ds.PatientName = json_data['PatientName']
     ds.PatientBirthDate = json_data['PatientBirthDate']
     ds.PatientSex = json_data['PatientSex']
     ds.StudyID = json_data['StudyID']
@@ -55,28 +52,27 @@ def generate_dummy_data():
     # Print out the dataset to verify
     print(managed_instances[0])
     
-def save_into_managed_instances(json_file_path):
+def save_into_managed_instances(json_file_path, patient_data):
     """Save the JSON file data into the managed_instances dictionary."""
     with open(json_file_path, 'r') as json_file:
         worklist_data = json.load(json_file)
         
     # Convert JSON data to Dataset
-    ds = load_worklist_from_json(worklist_data)
-
-    # Assign the dataset to managed_instances[0]
-    # Assuming managed_instances is a list with at least one element
-    managed_instances[0] = ds
+    for i in range(len(worklist_data)):
+        ds = load_worklist_from_json(worklist_data[i])
+        managed_instances[i] = ds
+        # Assign the dataset to managed_instances[0]
+        # Assuming managed_instances is a list with at least one element
+        print('=====================')
+        print(managed_instances[i])
+        print('=====================')
 
     # Print out the dataset to verify
-    print(managed_instances[0])
-    
-    
+    # print(managed_instances[0])
 
 def handle_find(event):
     """Handle a C-FIND request event."""
     requestor = event.assoc.requestor
-    req = event.request
-    model =event.request.AffectedSOPClassUID
     ds = event.identifier
     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
     addr, port = requestor.address, requestor.port
@@ -84,19 +80,25 @@ def handle_find(event):
     print(f"Received C-FIND request from {addr}:{port} at {timestamp}")
     
     if 'ScheduledProcedureStepSequence' not in ds:
-        # Failure
+        # Failure invalid request
         yield 0xC000, None
     
     # item = ds.ScheduledStepAttributesSequence
     item = ds.ScheduledProcedureStepSequence
-    schedule = item[0].ScheduledProcedureStepStartDate
+    # schedule = item[0].ScheduledProcedureStepStartDate
     ae_title = item[0].ScheduledStationAETitle
+    
+    matching = []
 
     for uid, instance in managed_instances.items():
         ScheduledProcedure = instance.get('ScheduledProcedureStepSequence')
-        matching = [
-            inst for inst in ScheduledProcedure if inst.ScheduledProcedureStepStartDate == schedule or inst.ScheduledAETitle == ae_title
+        
+        found = [
+            inst for inst in ScheduledProcedure if inst.ScheduledStationAETitle == ae_title
         ]
+        
+        if found:
+            matching = found
     
     for instance in matching:
         # Check if C-CANCEL has been received
@@ -148,38 +150,20 @@ def handle_create(event):
     requestor = event.assoc.requestor
     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
     addr, port = requestor.address, requestor.port
+    req = event.request
     # logger.info(f"Received C-FIND request from {addr}:{port} at {timestamp}")
     print(f"Received N-CREATE request from {addr}:{port} at {timestamp}")
     
-    # model =event.request.AffectedSOPClassUID
-    # print(model.keyword)
-    
-    # MPPS' N-CREATE request must have an *Affected SOP Instance UID*
-    req = event.request
-    print('Patient Name: ', event.attribute_list.PatientName)
-    print('Performed Procedure Status: ',
-          event.attribute_list.PerformedProcedureStepStatus)
     if req.AffectedSOPInstanceUID is None:
         # Failed - invalid attribute value
         return 0x0106, None
-
-    # Can't create a duplicate SOP Instance
+    
     if req.AffectedSOPInstanceUID in managed_instances:
         # Failed - duplicate SOP Instance
         return 0x0111, None
-
-    # The N-CREATE request's *Attribute List* dataset
+    
     attr_list = event.attribute_list
-
-    # Performed Procedure Step Status must be 'IN PROGRESS'
-    if "PerformedProcedureStepStatus" not in attr_list:
-        # Failed - missing attribute
-        return 0x0120, None
-    if attr_list.PerformedProcedureStepStatus.upper() != 'IN PROGRESS':
-        return 0x0106, None
-
-    # Skip other tests...
-
+    
     # Create a Modality Performed Procedure Step SOP Class Instance
     #   DICOM Standard, Part 3, Annex B.17
     ds = Dataset()
@@ -187,7 +171,6 @@ def handle_create(event):
     # Add the SOP Common module elements (Annex C.12.1)
     ds.SOPClassUID = ModalityPerformedProcedureStep
     ds.SOPInstanceUID = req.AffectedSOPInstanceUID
-    print('SOP Instance UID: ', ds.SOPInstanceUID)  
 
     # Update with the requested attributes
     ds.update(attr_list)
@@ -195,9 +178,9 @@ def handle_create(event):
     # Add the dataset to the managed SOP Instances
     managed_instances[ds.SOPInstanceUID] = ds
     
-    print('===============================================')
-    print(managed_instances)
-    print('===============================================')
+    # print('===============================================')
+    # print(managed_instances)
+    # print('===============================================')
 
     # Return status, dataset
     return 0x0000, ds
@@ -212,7 +195,6 @@ def handle_set(event):
     print(f"Received N-SET request from {addr}:{port} at {timestamp}")
     print('SOP Instance UID: ', req.RequestedSOPInstanceUID)
 
-    
     if req.RequestedSOPInstanceUID not in managed_instances:
         print('SOP Instance not recognised')
         # Failure - SOP Instance not recognised

@@ -13,12 +13,12 @@ ae.add_requested_context(PatientRootQueryRetrieveInformationModelFind)
 
 # Create our Identifier (query) dataset
 ds = Dataset()
-ds.PatientName = 'Edo'
+ds.PatientName = '*'
 ds.ScheduledProcedureStepSequence = [Dataset()]
 item = ds.ScheduledProcedureStepSequence[0]
-item.ScheduledStationAETitle = 'CTSCANNER'
-item.ScheduledProcedureStepStartDate = '20181005'
-item.Modality = 'CT'
+item.ScheduledStationAETitle = 'RADIOLOGY1'
+# item.ScheduledProcedureStepStartDate = '20240702'
+# item.Modality = 'Radio1'
 
 # Associate with the peer AE at IP 127.0.0.1 and port 11112
 assoc = ae.associate("127.0.0.1", 1234)

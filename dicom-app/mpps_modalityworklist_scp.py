@@ -102,21 +102,22 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
         patient_data = json.loads(post_data)
+        # print(patient_data)
 
         # Validate the received data
-        required_fields = ['PatientName', 'PatientID',
-                           'PatientBirthDate', 'PatientSex',
-                           'StudyID', 'AccessionNumber',
-                           'ReferringPhysician', 'StudyDescription',
-                           'ScheduledProcedureStepStartDate',
-                           'Modality', 'RequestedProcedureID',
-                           'RequestedProcedureDescription',
-                           'ScheduledStationAETitle',
-                           'ScheduledPerformingPhysician',
-                           'ScheduledProcedureStepLocation',
-                           'PreMedication', 'SpecialNeeds']
-
-        if all(field in patient_data for field in required_fields):
+        # required_fields = ['PatientID', 'PatientName',
+        #                    'PatientBirthDate', 'PatientSex',
+        #                    'StudyID', 'AccessionNumber',
+        #                    'ReferringPhysician', 'StudyDescription',
+        #                    'ScheduledProcedureStepStartDate',
+        #                    'Modality', 'RequestedProcedureID',
+        #                    'RequestedProcedureDescription',
+        #                    'ScheduledStationAETitle',
+        #                    'ScheduledPerformingPhysician',
+        #                    'ScheduledProcedureStepLocation',
+        #                    'PreMedication', 'SpecialNeeds']
+        
+        if True:
             # Respond that the data was received
             response = {
                 "message": "Data received successfully",
@@ -127,21 +128,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(response).encode())
             
-           # Write the JSON data to the specified file
+            # Write the JSON data to the specified file
             json_file_path = 'dummy-data/data1.json'
             os.makedirs(os.path.dirname(json_file_path), exist_ok=True)
+            
             with open(json_file_path, 'w') as json_file:
                 json.dump(patient_data, json_file)
 
             # Save the JSON file data into managed_instances dict
-            hd.save_into_managed_instances(json_file_path)
-            
-            # Execute the external script with the temporary file path
-            # try:
-            #     subprocess.run(["python3", "mpps_scu_create.py",
-            #                    temp_file_path], check=True)
-            # except subprocess.CalledProcessError as e:
-            #     print(f"Error running external script: {e}")
+            hd.save_into_managed_instances(json_file_path, patient_data)
         else:
             response = {
                 "message": "Invalid data format",
@@ -154,7 +149,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 # Function to start the HTTP server
 def start_http_server():
-    server_address = ('localhost', 8080)
+    server_address = ('10.20.187.102', 8080)
     httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
     print("HTTP server running on port 8080")
     httpd.serve_forever()
