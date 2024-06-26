@@ -150,23 +150,32 @@ def handle_create(event):
     
     attr_list = event.attribute_list
     
-    # Create a Modality Performed Procedure Step SOP Class Instance
-    #   DICOM Standard, Part 3, Annex B.17
-    ds = Dataset()
+    found = []
+    for index in range(len(managed_instances.items())):
+        patientName = managed_instances[index].PatientName
+        modality = managed_instances[0].ScheduledProcedureStepSequence._list[0].Modality    # noqa: E501
+           
+        if patientName == attr_list.PatientName and modality == attr_list.Modality:
+            found.append(patientName)
+        
+        if found: 
+            # Create a Modality Performed Procedure Step SOP Class Instance
+            #   DICOM Standard, Part 3, Annex B.17
+            ds = Dataset()
 
-    # Add the SOP Common module elements (Annex C.12.1)
-    ds.SOPClassUID = ModalityPerformedProcedureStep
-    ds.SOPInstanceUID = req.AffectedSOPInstanceUID
+            # Add the SOP Common module elements (Annex C.12.1)
+            ds.SOPClassUID = ModalityPerformedProcedureStep
+            ds.SOPInstanceUID = req.AffectedSOPInstanceUID
 
-    # Update with the requested attributes
-    ds.update(attr_list)
+            # Update with the requested attributes
+            ds.update(attr_list)
 
-    # Add the dataset to the managed SOP Instances
-    managed_instances[ds.SOPInstanceUID] = ds
-    
-    # print('===============================================')
-    # print(managed_instances)
-    # print('===============================================')
+            # Add the dataset to the managed SOP Instances
+            managed_instances[index] = ds
+            break
+    print('===============================================')
+    print(managed_instances)
+    print('===============================================')
 
     # Return status, dataset
     return 0x0000, ds

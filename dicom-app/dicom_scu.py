@@ -7,7 +7,7 @@ from pynetdicom.sop_class import (
 
 debug_logger()
 
-ae = AE()
+ae = AE(ae_title='dicom1')
 ae.add_requested_context(ModalityWorklistInformationFind)
 ae.add_requested_context(PatientRootQueryRetrieveInformationModelFind)
 

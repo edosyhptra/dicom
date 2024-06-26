@@ -51,7 +51,7 @@ final_ds.PerformedProcedureStepEndTime = "1300"
 
 
 # Initialise the Application Entity
-ae = AE()
+ae = AE(ae_title='dicom1')
 
 # Add a requested presentation context
 ae.add_requested_context(ModalityPerformedProcedureStep)
