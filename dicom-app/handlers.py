@@ -23,7 +23,7 @@ def load_worklist_from_json(json_data):
     scheduled_procedure_step.ScheduledProcedureStepStartDate = json_data[
         'ScheduledProcedureStepStartDate']
     scheduled_procedure_step.Modality = json_data['Modality']
-    scheduled_procedure_step.ScheduledStationAETitle = json_data['ScheduledStationAETitle']
+    scheduled_procedure_step.ScheduledStationAETitle = json_data['ScheduledStationAETitle']  # noqa: E501
     scheduled_procedure_step.ScheduledPerformingPhysicianName = json_data[
         'ScheduledPerformingPhysician']
     scheduled_procedure_step.ScheduledProcedureStepLocation = json_data[
@@ -92,9 +92,10 @@ def handle_find(event):
 
     for uid, instance in managed_instances.items():
         ScheduledProcedure = instance.get('ScheduledProcedureStepSequence')
+        patientName = instance.PatientName
         
         found = [
-            inst for inst in ScheduledProcedure if inst.ScheduledStationAETitle == ae_title
+            inst for inst in ScheduledProcedure if inst.ScheduledStationAETitle == ae_title  # noqa: E501
         ]
         
         if found:
@@ -106,32 +107,18 @@ def handle_find(event):
              yield (0xFE00, None)
              return
         
-        # identifier = Dataset()
-        # identifier.PatientName = ds.PatientName
-        # identifier.ScheduledProcedureStepSequence = [Dataset()]
-        # identifier.ScheduledStationAETitle = instance.ScheduledStationAETitle
-        # identifier.ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate
-        # identifier.Modality = instance.Modality
-        
         # Create the identifier dataset
         identifier = Dataset()
-        identifier.PatientName = ds.PatientName
-        # identifier.PatientID = ds.PatientID
-        # identifier.PatientBirthDate = ds.PatientBirthDate
-        # identifier.PatientSex = ds.PatientSex
-        # identifier.StudyID = ds.StudyID
-        # identifier.AccessionNumber = ds.AccessionNumber
-        # identifier.ReferringPhysicianName = ds.ReferringPhysician
-        # identifier.StudyDescription = ds.StudyDescription
+        identifier.PatientName = patientName
         
         # Create the ScheduledProcedureStepSequence dataset
         identifier.ScheduledProcedureStepSequence = [Dataset()]
         scheduled_procedure_step = identifier.ScheduledProcedureStepSequence[0]
-        scheduled_procedure_step.ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate
+        scheduled_procedure_step.ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate  # noqa: E501
         scheduled_procedure_step.Modality = instance.Modality
-        scheduled_procedure_step.ScheduledStationAETitle = instance.ScheduledStationAETitle
-        scheduled_procedure_step.ScheduledPerformingPhysicianName = instance.ScheduledPerformingPhysicianName
-        scheduled_procedure_step.ScheduledProcedureStepLocation = instance.ScheduledProcedureStepLocation
+        scheduled_procedure_step.ScheduledStationAETitle = instance.ScheduledStationAETitle  # noqa: E501
+        scheduled_procedure_step.ScheduledPerformingPhysicianName = instance.ScheduledPerformingPhysicianName  # noqa: E501
+        scheduled_procedure_step.ScheduledProcedureStepLocation = instance.ScheduledProcedureStepLocation  # noqa: E501
         scheduled_procedure_step.PreMedication = instance.PreMedication
         
         # Add the ScheduledProcedureStepSequence to the identifier
@@ -139,7 +126,7 @@ def handle_find(event):
 
         # Continue adding the remaining fields directly to the identifier
         # identifier.RequestedProcedureID = instance.RequestedProcedureID
-        # identifier.RequestedProcedureDescription = instance.RequestedProcedureDescription
+        # identifier.RequestedProcedureDescription = instance.RequestedProcedureDescription  # noqa: E501
         # identifier.SpecialNeeds = instance.SpecialNeeds
         
         # Pending

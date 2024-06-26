@@ -149,7 +149,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 # Function to start the HTTP server
 def start_http_server():
-    server_address = ('10.20.187.102', 8080)
+    server_address = ('localhost', 8080)
     httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
     print("HTTP server running on port 8080")
     httpd.serve_forever()
