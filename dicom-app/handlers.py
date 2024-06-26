@@ -144,6 +144,12 @@ def handle_create(event):
         # Failed - invalid attribute value
         return 0x0106, None
     
+    # for i in range(len(managed_instances)):
+    #     if req.AffectedSOPInstanceUID in managed_instances[i].SOPClassUID: 
+    #         # Failed - duplicate SOP Instance
+    #         print('Duplicate SOP Instance')
+    #         return 0x0111, None
+        
     if req.AffectedSOPInstanceUID in managed_instances:
         # Failed - duplicate SOP Instance
         return 0x0111, None
