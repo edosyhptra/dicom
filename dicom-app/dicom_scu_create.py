@@ -18,34 +18,33 @@ ct_study_uid = generate_uid()
 mpps_instance_uid = generate_uid()
 
 # Our N-CREATE *Attribute List*
-def build_attr_list(patient_data):
+# Our N-CREATE *Attribute List*
+
+
+def build_attr_list():
     ds = Dataset()
     # Performed Procedure Step Relationship
     ds.ScheduledStepAttributesSequence = [Dataset()]
     step_seq = ds.ScheduledStepAttributesSequence
     step_seq[0].StudyInstanceUID = ct_study_uid
     step_seq[0].ReferencedStudySequence = []
-    step_seq[0].AccessionNumber = '1'
-    step_seq[0].RequestedProcedureID = "1"
-    step_seq[0].RequestedProcedureDescription = 'Some procedure'
-    step_seq[0].ScheduledProcedureStepStartDate = '20181005'
+    step_seq[0].AccessionNumber = '*'
+    step_seq[0].RequestedProcedureID = "*"
+    step_seq[0].RequestedProcedureDescription = '*'
     step_seq[0].ScheduledProcedureStepID = "1"
     step_seq[0].ScheduledProcedureStepDescription = 'Some procedure step'
     step_seq[0].ScheduledProcedureProtocolCodeSequence = []
-
-    # Use the patient data from the JSON file
-    ds.PatientName = 'Edo' #patient_data['PatientName']
-    ds.PatientID = '1' #patient_data['PatientID']
-    ds.PatientBirthDate =  '23101996'#patient_data['PatientBirthDate']
-    ds.PatientSex = '0'#patient_data['PatientSex']
-
+    ds.PatientName = 'Reinert*Yosua*Rumagit'
+    ds.PatientID = '1'
+    ds.PatientBirthDate = '19921124'
+    ds.PatientSex = 'M'
     ds.ReferencedPatientSequence = []
     # Performed Procedure Step Information
     ds.PerformedProcedureStepID = "1"
-    ds.PerformedStationAETitle = 'admin-scp'
-    ds.PerformedStationName = 'Some station'
+    ds.PerformedStationAETitle = 'dicom1'
+    ds.PerformedStationName = 'Radio1'
     ds.PerformedLocation = 'Some location'
-    ds.PerformedProcedureStepStartDate = '20000101'
+    ds.PerformedProcedureStepStartDate = '20240702'
     ds.PerformedProcedureStepStartTime = '1300'
     ds.PerformedProcedureStepStatus = 'IN PROGRESS'
     ds.PerformedProcedureStepDescription = 'Some description'
@@ -54,19 +53,22 @@ def build_attr_list(patient_data):
     ds.PerformedProcedureStepEndDate = None
     ds.PerformedProcedureStepEndTime = None
     # Image Acquisition Results
-    ds.Modality = 'CT'
+    ds.Modality = 'Fluora'
     ds.StudyID = "1"
     ds.PerformedProtocolCodeSequence = []
     ds.PerformedSeriesSequence = []
 
     return ds
 
-# Main function to run the script
-def main(json_file_path):
-    patient_data = read_json_file(json_file_path)
 
+# Main function to run the script
+def main():
+    # patient_data = read_json_file(json_file_path)
+    print('ct_study_uid: ', ct_study_uid)
+    print('mpps_instance_uid: ', mpps_instance_uid)
+    
     # Initialise the Application Entity
-    ae = AE()
+    ae = AE(ae_title='dicom1')
 
     # Add a requested presentation context
     ae.add_requested_context(ModalityPerformedProcedureStep)
@@ -78,7 +80,7 @@ def main(json_file_path):
         # Use the N-CREATE service to send a request to create a SOP Instance
         # should return the Instance itself
         status, attr_list = assoc.send_n_create(
-            build_attr_list(patient_data),
+            build_attr_list(),
             ModalityPerformedProcedureStep,
             mpps_instance_uid
         )
@@ -103,7 +105,4 @@ def main(json_file_path):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python3 mpps_scu_create.py <json_file_path>")
-    else:
-        main(sys.argv[1])
+    main()
