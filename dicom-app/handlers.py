@@ -182,20 +182,20 @@ def handle_create(event):
             print(managed_instances[index])
             print('===============================================')
             
-            # The URL of the HTTP endpoint you want to send the data to
-            url = "http://10.20.184.26:8000/api/status"
+            # # The URL of the HTTP endpoint you want to send the data to
+            # url = "http://10.20.184.26:8000/api/status"
             
-            # json_string = json.dumps(managed_instances[index], indent=4)
-            # print(json_string)
+            # # json_string = json.dumps(managed_instances[index], indent=4)
+            # # print(json_string)
 
-            # Sending the data as a JSON payload
-            response = requests.post(url, json=managed_instances[index])
+            # # Sending the data as a JSON payload
+            # response = requests.post(url, json=managed_instances[index])
 
-            # Checking the response status
-            if response.status_code == 200:
-                print("Data sent successfully!")
-            else:
-                print(f"Failed to send data. Status code: {response.status_code}")
+            # # Checking the response status
+            # if response.status_code == 200:
+            #     print("Data sent successfully!")
+            # else:
+            #     print(f"Failed to send data. Status code: {response.status_code}")
                         
             break
     # print('===============================================')
