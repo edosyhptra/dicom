@@ -1,5 +1,5 @@
 from pydicom.dataset import Dataset
-# import requests
+import requests
 import json
 
 from pynetdicom.sop_class import ModalityPerformedProcedureStep
@@ -178,10 +178,29 @@ def handle_create(event):
 
             # Add the dataset to the managed SOP Instances
             managed_instances[index] = ds
+            print('===============================================')
+            print(managed_instances[index])
+            print('===============================================')
+            
+            # The URL of the HTTP endpoint you want to send the data to
+            url = "http://10.20.184.26:8000/api/status"
+            
+            # json_string = json.dumps(managed_instances[index], indent=4)
+            # print(json_string)
+
+            # Sending the data as a JSON payload
+            response = requests.post(url, json=managed_instances[index])
+
+            # Checking the response status
+            if response.status_code == 200:
+                print("Data sent successfully!")
+            else:
+                print(f"Failed to send data. Status code: {response.status_code}")
+                        
             break
-    print('===============================================')
-    print(managed_instances)
-    print('===============================================')
+    # print('===============================================')
+    # print(managed_instances)
+    # print('===============================================')
 
     # Return status, dataset
     return 0x0000, ds
@@ -196,12 +215,23 @@ def handle_set(event):
     print(f"Received N-SET request from {addr}:{port} at {timestamp}")
     print('SOP Instance UID: ', req.RequestedSOPInstanceUID)
 
-    if req.RequestedSOPInstanceUID not in managed_instances:
+    # found = False 
+    
+    for i, (key, value) in enumerate(managed_instances.items()):
+        print(managed_instances[i].SOPInstanceUID)
+        if req.RequestedSOPInstanceUID == managed_instances[i].SOPInstanceUID:
+            index = i
+            found = True
+            
+            break
+        
+    if not found:
         print('SOP Instance not recognised')
         # Failure - SOP Instance not recognised
         return 0x0112, None
-
-    ds = managed_instances[req.RequestedSOPInstanceUID]
+    
+    # ds = managed_instances[req.RequestedSOPInstanceUID]
+    ds = managed_instances[index]
 
     # The N-SET request's *Modification List* dataset
     mod_list = event.attribute_list
@@ -209,7 +239,7 @@ def handle_set(event):
     # Skip other tests...
 
     ds.update(mod_list)
-    print('Patient Name: ', event.attribute_list)
+    # print('Patient Name: ', event.attribute_list)
     
     # # Convert the dataset to JSON
     # json_payload = ds.to_json()

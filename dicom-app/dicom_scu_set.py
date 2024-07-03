@@ -15,7 +15,7 @@ from pynetdicom.status import code_to_category
 ct_series_uid = generate_uid()
 ct_instance_uids = [generate_uid() for ii in range(10)]
 ct_study_uid = generate_uid()
-mpps_instance_uid = "1.2.826.0.1.3680043.8.498.90850455222989518730434737218649939588"
+mpps_instance_uid = "1.2.826.0.1.3680043.8.498.13312481249335120319762832200341296524"
 # Our N-SET *Modification List*
 
 def build_mod_list(series_instance, sop_instances):
@@ -23,12 +23,12 @@ def build_mod_list(series_instance, sop_instances):
     ds.PerformedSeriesSequence = [Dataset()]
 
     series_seq = ds.PerformedSeriesSequence
-    series_seq[0].PerformingPhysicianName = "Dr. xyz"
+    series_seq[0].PerformingPhysicianName = "Dr. Agung"
     series_seq[0].ProtocolName = "Some protocol"
     # series_seq[0].OperatorName = None
     series_seq[0].SeriesInstanceUID = series_instance
     series_seq[0].SeriesDescription = "some description"
-    series_seq[0].RetrieveAETitle = "admin-scp"
+    series_seq[0].RetrieveAETitle = "dicom1"
     series_seq[0].ReferencedImageSequence = []
 
     img_seq = series_seq[0].ReferencedImageSequence
