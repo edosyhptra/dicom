@@ -4,3 +4,4 @@ __pycache__/
 default.ini
 experiment/
 app/
+.DS_Store
