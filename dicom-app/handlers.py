@@ -179,17 +179,19 @@ def handle_create(event):
             # Add the dataset to the managed SOP Instances
             managed_instances[index] = ds
             print('===============================================')
-            print(managed_instances[index])
+            # print(managed_instances[index])
+            print(type(managed_instances[index]))
+            print(managed_instances[index].to_json())
             print('===============================================')
             
-            # # The URL of the HTTP endpoint you want to send the data to
-            # url = "http://10.20.184.26:8000/api/status"
+            # The URL of the HTTP endpoint you want to send the data to
+            # url = "http://localhost:8080/"
             
             # # json_string = json.dumps(managed_instances[index], indent=4)
             # # print(json_string)
 
-            # # Sending the data as a JSON payload
-            # response = requests.post(url, json=managed_instances[index])
+            # # # Sending the data as a JSON payload
+            # response = requests.post(url, json=managed_instances[index].to_json())
 
             # # Checking the response status
             # if response.status_code == 200:
