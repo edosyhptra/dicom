@@ -11,6 +11,7 @@ managed_instances = {}
 # Function to load instance to JSON
 def dicom_to_json(ds):
     json_data = {
+        'SOPInstanceUID': ds.SOPInstanceUID,
         'PatientID': ds.PatientID,
         'PatientName': ds.PatientName,
         'PatientBirthDate': ds.PatientBirthDate,
@@ -281,6 +282,7 @@ def handle_set(event):
         print('SOP Instance not recognised')
         # Failure - SOP Instance not recognised
         return 0x0112, None
+    
     
     # ds = managed_instances[req.RequestedSOPInstanceUID]
     ds = managed_instances[index]
