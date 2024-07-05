@@ -9,11 +9,12 @@ managed_instances = {}
 # json_data.PatientID
 
 # Function to load instance to JSON
-def dicom_to_json(ds):
+def dicom_to_json_ncreate(ds):
+    name = ds.PatientName
     json_data = {
         'SOPInstanceUID': ds.SOPInstanceUID,
         'PatientID': ds.PatientID,
-        'PatientName': ds.PatientName,
+        'PatientName': ds.PatientName.alphabetic,
         'PatientBirthDate': ds.PatientBirthDate,
         'PatientSex': ds.PatientSex,
         'StudyID': ds.StudyID,
@@ -237,10 +238,10 @@ def handle_create(event):
             
             # # json_string = json.dumps(managed_instances[index], indent=4)
             # # print(json_string)
-            data = dicom_to_json(managed_instances[index])
+            data = dicom_to_json_ncreate(managed_instances[index])
             # data = data.to_json_dict()
-            print(type(data))
-
+            # print(data['PatientName'])
+            
             # # # Sending the data as a JSON payload
             response = requests.post(url, data=data)
 
@@ -291,8 +292,21 @@ def handle_set(event):
     mod_list = event.attribute_list
 
     # Skip other tests...
-
+    url = "http://10.20.186.205:8000/api/status"
     ds.update(mod_list)
+    # data = dicom_to_json(ds)
+    # data = data.to_json_dict()
+    # print(type(data))
+
+    # Sending the data as a JSON payload
+    # response = requests.post(url, data=data)
+
+    # Checking the response status
+    # if response.status_code == 200:
+    #     print("Data sent successfully!")
+    # else:
+    #     print(f"Failed to send data. Status code: {response.status_code}")
+
     # print('Patient Name: ', event.attribute_list)
     
     # # Convert the dataset to JSON
