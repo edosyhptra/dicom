@@ -70,6 +70,25 @@ def save_into_managed_instances(json_file_path, patient_data):
     # Print out the dataset to verify
     # print(managed_instances[0])
 
+
+def update_managed_instances(json_file_path, patient_data):
+    """Save the JSON file data into the managed_instances dictionary."""
+    with open(json_file_path, 'r') as json_file:
+        worklist_data = json.load(json_file)
+
+    # Convert JSON data to Dataset
+    for i in range(len(worklist_data)):
+        ds = load_worklist_from_json(worklist_data[i])
+        managed_instances[i] = ds
+        # Assign the dataset to managed_instances[0]
+        # Assuming managed_instances is a list with at least one element
+        print('=====================')
+        print(managed_instances[i])
+        print('=====================')
+
+    # Print out the dataset to verify
+    # print(managed_instances[0])
+
 def handle_find(event):
     """Handle a C-FIND request event."""
     requestor = event.assoc.requestor
@@ -182,6 +201,8 @@ def handle_create(event):
             # print(managed_instances[index])
             print(type(managed_instances[index]))
             print(managed_instances[index].to_json())
+            json_file_path = 'dummy-data/data1.json'
+            update_managed_instances(json_file_path, managed_instances[index])
             print('===============================================')
             
             # The URL of the HTTP endpoint you want to send the data to
