@@ -34,7 +34,7 @@ def build_attr_list():
     step_seq[0].ScheduledProcedureStepID = "1"
     step_seq[0].ScheduledProcedureStepDescription = 'Some procedure step'
     step_seq[0].ScheduledProcedureProtocolCodeSequence = []
-    ds.PatientName = 'Reinert*Yosua*Rumagit'
+    ds.PatientName = 'Reinert^Yosua^Rumagit'
     ds.PatientID = '1'
     ds.PatientBirthDate = '19921124'
     ds.PatientSex = 'M'
@@ -53,8 +53,8 @@ def build_attr_list():
     ds.PerformedProcedureStepEndDate = None
     ds.PerformedProcedureStepEndTime = None
     # Image Acquisition Results
-    ds.Modality = 'Fluora'
-    ds.StudyID = "1"
+    ds.Modality = 'CT1234'
+    ds.StudyID = "4"
     ds.PerformedProtocolCodeSequence = []
     ds.PerformedSeriesSequence = []
 

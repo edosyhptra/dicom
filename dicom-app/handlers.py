@@ -5,6 +5,32 @@ import json
 from pynetdicom.sop_class import ModalityPerformedProcedureStep
 
 managed_instances = {}
+# json_data.PatientName
+# json_data.PatientID
+
+# Function to load instance to JSON
+def dicom_to_json(ds):
+    json_data = {
+        'PatientID': ds.PatientID,
+        'PatientName': ds.PatientName,
+        'PatientBirthDate': ds.PatientBirthDate,
+        'PatientSex': ds.PatientSex,
+        'StudyID': ds.StudyID,
+        'PerformedProcedureStepID': ds.PerformedProcedureStepID,
+        'PerformedStationAETitle': ds.PerformedStationAETitle,
+        'PerformedStationName': ds.PerformedStationName,
+        'PerformedLocation': ds.PerformedLocation,
+        'PerformedProcedureStepStartDate': ds.PerformedProcedureStepStartDate,
+        'PerformedProcedureStepStartTime': ds.PerformedProcedureStepStartTime,
+        'PerformedProcedureStepStatus': ds.PerformedProcedureStepStatus,
+        'PerformedProcedureStepDescription': ds.PerformedProcedureStepDescription,
+        'PerformedProcedureTypeDescription': ds.PerformedProcedureTypeDescription,
+        'PerformedProcedureCodeSequence': ds.PerformedProcedureCodeSequence,
+        'PerformedProcedureStepEndDate': ds.PerformedProcedureStepEndDate,
+        'PerformedProcedureStepEndTime': ds.PerformedProcedureStepEndTime
+    }
+
+    return json_data
 
 # Function to load JSON data and convert it to a Dataset
 def load_worklist_from_json(json_data):
@@ -202,23 +228,26 @@ def handle_create(event):
             print(type(managed_instances[index]))
             print(managed_instances[index].to_json())
             json_file_path = 'dummy-data/data1.json'
-            update_managed_instances(json_file_path, managed_instances[index])
+            # update_managed_instances(json_file_path, managed_instances[index])
             print('===============================================')
             
             # The URL of the HTTP endpoint you want to send the data to
-            # url = "http://localhost:8080/"
+            url = "http://10.20.186.205:8000/api/status"
             
             # # json_string = json.dumps(managed_instances[index], indent=4)
             # # print(json_string)
+            data = dicom_to_json(managed_instances[index])
+            # data = data.to_json_dict()
+            print(type(data))
 
             # # # Sending the data as a JSON payload
-            # response = requests.post(url, json=managed_instances[index].to_json())
+            response = requests.post(url, data=data)
 
-            # # Checking the response status
-            # if response.status_code == 200:
-            #     print("Data sent successfully!")
-            # else:
-            #     print(f"Failed to send data. Status code: {response.status_code}")
+            # Checking the response status
+            if response.status_code == 200:
+                print("Data sent successfully!")
+            else:
+                print(f"Failed to send data. Status code: {response.status_code}")
                         
             break
     # print('===============================================')
