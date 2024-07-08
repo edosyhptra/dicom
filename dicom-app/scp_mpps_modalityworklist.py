@@ -12,7 +12,7 @@ import handlers as hd
 import argparse
 import os
 
-__aetitle__ = "admin-scp"
+__aetitle__ = "ADM_SCP"
 __version__ = "0.6.0"
 
 def _setup_argparser():
