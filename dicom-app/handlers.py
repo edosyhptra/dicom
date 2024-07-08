@@ -117,6 +117,17 @@ def update_managed_instances(json_file_path, patient_data):
     # Print out the dataset to verify
     # print(managed_instances[0])
 
+def handle_echo(event):
+    """Handle a ECHO request event."""
+    requestor = event.assoc.requestorr
+    timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    addr, port = requestor.address, requestor.port
+    # logger.info(f"Received C-FIND request from {addr}:{port} at {timestamp}")
+    print(f"Received ECHO request from {addr}:{port} at {timestamp}")
+    
+    return 0x0000
+    
+
 def handle_find(event):
     """Handle a C-FIND request event."""
     requestor = event.assoc.requestor
