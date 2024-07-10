@@ -35,12 +35,15 @@ def dicom_to_json_ncreate(ds):
     return json_data
 
 # Function to load JSON data and convert it to a Dataset
+
+
 def load_worklist_from_json(json_data):
     ds = Dataset()
     ds.PatientID = json_data['PatientID']
     ds.PatientName = json_data['PatientName']
     ds.PatientBirthDate = json_data['PatientBirthDate']
     ds.PatientSex = json_data['PatientSex']
+    ds.PatientWeight = json_data['PatientWeight']
     ds.StudyID = json_data['StudyID']
     ds.AccessionNumber = json_data['AccessionNumber']
     ds.ReferringPhysicianName = json_data['ReferringPhysician']
@@ -117,6 +120,17 @@ def update_managed_instances(json_file_path, patient_data):
     # Print out the dataset to verify
     # print(managed_instances[0])
 
+def handle_echo(event):
+    """Handle a ECHO request event."""
+    requestor = event.assoc.requestorr
+    timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    addr, port = requestor.address, requestor.port
+    # logger.info(f"Received C-FIND request from {addr}:{port} at {timestamp}")
+    print(f"Received ECHO request from {addr}:{port} at {timestamp}")
+    
+    return 0x0000
+    
+
 def handle_find(event):
     """Handle a C-FIND request event."""
     requestor = event.assoc.requestor
@@ -135,16 +149,15 @@ def handle_find(event):
     
     matching = []
 
-    for uid, instance in managed_instances.items():
-        ScheduledProcedure = instance.get('ScheduledProcedureStepSequence')
-        
-        found = [
+    for uid, found in managed_instances.items():
+        ScheduledProcedure = found.get('ScheduledProcedureStepSequence')
+        # check = []
+        check = [
             inst for inst in ScheduledProcedure if inst.ScheduledStationAETitle == ae_title  # noqa: E501
         ]
         
-        if found:
-            matching = found
-            patientName = instance.PatientName
+        if check:
+            matching.append(found)
             
     
     for instance in matching:
@@ -155,25 +168,37 @@ def handle_find(event):
         
         # Create the identifier dataset
         identifier = Dataset()
-        identifier.PatientName = patientName
+        # identifier.Modality = instance.Modality
+        # identifier.RequestedContrastAgent = ''
+        identifier.PatientName = instance.PatientName
+        identifier.PatientID = instance.PatientID
+        identifier.StudyID = instance.StudyID
+        identifier.PatientBirthDate = instance.PatientBirthDate
+        identifier.PatientSex = instance.PatientSex
+        identifier.PatientWeight = instance.PatientWeight
+        
+        # is it from the dicom or the app?
+        identifier.StudyInstanceUID = '987111' 
         
         # Create the ScheduledProcedureStepSequence dataset
-        identifier.ScheduledProcedureStepSequence = [Dataset()]
-        scheduled_procedure_step = identifier.ScheduledProcedureStepSequence[0]
-        scheduled_procedure_step.ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate  # noqa: E501
-        scheduled_procedure_step.Modality = instance.Modality
-        scheduled_procedure_step.ScheduledStationAETitle = instance.ScheduledStationAETitle  # noqa: E501
-        scheduled_procedure_step.ScheduledPerformingPhysicianName = instance.ScheduledPerformingPhysicianName  # noqa: E501
-        scheduled_procedure_step.ScheduledProcedureStepLocation = instance.ScheduledProcedureStepLocation  # noqa: E501
-        scheduled_procedure_step.PreMedication = instance.PreMedication
-        
-        # Add the ScheduledProcedureStepSequence to the identifier
-        identifier.ScheduledProcedureStepSequence = [scheduled_procedure_step]
+        # scheduled_procedure_step = Dataset()
+        # scheduled_procedure_step.ScheduledProcedureStepID = '112'
+        # scheduled_procedure_step.ScheduledStationAETitle = instance.ScheduledStationAETitle
+        # scheduled_procedure_step.ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate
+        # scheduled_procedure_step.ScheduledProcedureStepStartTime = '000000'
+        # scheduled_procedure_step.ScheduledProcedureStepEndDate = ''
+        # scheduled_procedure_step.ScheduledProcedureStepEndTime = ''
+        # scheduled_procedure_step.ScheduledPerformingPhysicianName = instance.ScheduledPerformingPhysicianName
+        # scheduled_procedure_step.ScheduledProcedureStepDescription = 'Test procedure'
+        # scheduled_procedure_step = identifier.ScheduledProcedureCodeSequence[0]
+        # scheduled_procedure_step.ScheduledStationName = 'Test Station'
+        # scheduled_procedure_step.ScheduledProcedureStepLocation = instance.ScheduledProcedureStepLocation
+        # scheduled_procedure_step.PreMedication = instance.PreMedication
+        # scheduled_procedure_step.ScheduledProcedureStepStatus = ''
+        # scheduled_procedure_step.CommentsOnTheScheduledProcedure = ''
 
-        # Continue adding the remaining fields directly to the identifier
-        # identifier.RequestedProcedureID = instance.RequestedProcedureID
-        # identifier.RequestedProcedureDescription = instance.RequestedProcedureDescription  # noqa: E501
-        # identifier.SpecialNeeds = instance.SpecialNeeds
+        # Add the ScheduledProcedureStepSequence to the identifier
+        # identifier.ScheduledProcedureStepSequence = [scheduled_procedure_step]
         
         # Pending
         yield (0xFF00, identifier)
@@ -203,55 +228,68 @@ def handle_create(event):
     
     attr_list = event.attribute_list
     
-    found = []
-    for index in range(len(managed_instances.items())):
-        patientName = managed_instances[index].PatientName
-        modality = managed_instances[0].ScheduledProcedureStepSequence._list[0].Modality    # noqa: E501
+    ds = Dataset()
+    
+    # Add the SOP Common module elements (Annex C.12.1)
+    ds.SOPClassUID = ModalityPerformedProcedureStep
+    ds.SOPInstanceUID = req.AffectedSOPInstanceUID
+
+    # Update with the requested attributes
+    ds.update(attr_list)
+
+    # Add the dataset to the managed SOP Instances
+    managed_instances[ds.SOPInstanceUID] = ds
+    
+    # found = []
+    # for index in range(len(managed_instances.items())):
+    #     patientName = managed_instances[index].PatientName
+    #     modality = managed_instances[0].ScheduledProcedureStepSequence._list[0].Modality    # noqa: E501
            
-        if patientName == attr_list.PatientName and modality == attr_list.Modality:
-            found.append(patientName)
+    #     if patientName == attr_list.PatientName and modality == attr_list.Modality:
+    #         found.append(patientName)
         
-        if found: 
-            # Create a Modality Performed Procedure Step SOP Class Instance
-            #   DICOM Standard, Part 3, Annex B.17
-            ds = Dataset()
+    #     if found: 
+    #         # Create a Modality Performed Procedure Step SOP Class Instance
+    #         #   DICOM Standard, Part 3, Annex B.17
+    #         ds = Dataset()
 
-            # Add the SOP Common module elements (Annex C.12.1)
-            ds.SOPClassUID = ModalityPerformedProcedureStep
-            ds.SOPInstanceUID = req.AffectedSOPInstanceUID
+    #         # Add the SOP Common module elements (Annex C.12.1)
+    #         ds.SOPClassUID = ModalityPerformedProcedureStep
+    #         ds.SOPInstanceUID = req.AffectedSOPInstanceUID
 
-            # Update with the requested attributes
-            ds.update(attr_list)
+    #         # Update with the requested attributes
+    #         ds.update(attr_list)
 
-            # Add the dataset to the managed SOP Instances
-            managed_instances[index] = ds
-            print('===============================================')
-            # print(managed_instances[index])
-            print(type(managed_instances[index]))
-            print(managed_instances[index].to_json())
-            json_file_path = 'dummy-data/data1.json'
-            # update_managed_instances(json_file_path, managed_instances[index])
-            print('===============================================')
+    #         # Add the dataset to the managed SOP Instances
+    #         managed_instances[index] = ds
+    #         print('===============================================')
+    #         # print(managed_instances[index])
+    #         print(type(managed_instances[index]))
+    #         print(managed_instances[index].to_json())
+    #         json_file_path = 'dummy-data/data1.json'
+    #         # update_managed_instances(json_file_path, managed_instances[index])
+    #         print('===============================================')
             
-            # The URL of the HTTP endpoint you want to send the data to
-            url = "http://10.20.186.205:8000/api/status"
+    #         # The URL of the HTTP endpoint you want to send the data to
+    #         url = "http://10.20.186.205:8000/api/status"
             
-            # # json_string = json.dumps(managed_instances[index], indent=4)
-            # # print(json_string)
-            data = dicom_to_json_ncreate(managed_instances[index])
-            # data = data.to_json_dict()
-            # print(data['PatientName'])
+    #         # # json_string = json.dumps(managed_instances[index], indent=4)
+    #         # # print(json_string)
+    #         data = dicom_to_json_ncreate(managed_instances[index])
+    #         # data = data.to_json_dict()
+    #         # print(data['PatientName'])
             
-            # # # Sending the data as a JSON payload
-            response = requests.post(url, data=data)
+    #         # # # Sending the data as a JSON payload
+    #         response = requests.post(url, data=data)
 
-            # Checking the response status
-            if response.status_code == 200:
-                print("Data sent successfully!")
-            else:
-                print(f"Failed to send data. Status code: {response.status_code}")
+    #         # Checking the response status
+    #         if response.status_code == 200:
+    #             print("Data sent successfully!")
+    #         else:
+    #             print(f"Failed to send data. Status code: {response.status_code}")
                         
-            break
+    #         break
+        
     # print('===============================================')
     # print(managed_instances)
     # print('===============================================')

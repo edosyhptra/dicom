@@ -16,7 +16,7 @@ ds = Dataset()
 ds.PatientName = '*'
 ds.ScheduledProcedureStepSequence = [Dataset()]
 item = ds.ScheduledProcedureStepSequence[0]
-item.ScheduledStationAETitle = 'RADIOLOGY1'
+item.ScheduledStationAETitle = 'MRC26266'
 # item.ScheduledProcedureStepStartDate = '20240702'
 # item.Modality = 'Radio1'
 
