@@ -12,7 +12,7 @@ import handlers as hd
 import argparse
 import os
 
-__aetitle__ = "admin-scp"
+__aetitle__ = "ADM_SCP"
 __version__ = "0.6.0"
 
 def _setup_argparser():
@@ -140,7 +140,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 # Function to start the HTTP server
 def start_http_server():
-    server_address = ('10.20.189.213', 8080)
+    server_address = ('localhost', 8080)
     httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
     print("HTTP server running on port 8080")
     httpd.serve_forever()
@@ -157,7 +157,8 @@ def start_dicom_ae():
 
     handlers = [(evt.EVT_N_CREATE, hd.handle_create),
                 (evt.EVT_N_SET, hd.handle_set),
-                (evt.EVT_C_FIND, hd.handle_find)]
+                (evt.EVT_C_FIND, hd.handle_find),
+                (evt.EVT_C_ECHO, hd.handle_echo)]
     
     # Generate dummy data
     # hd.generate_dummy_data()
