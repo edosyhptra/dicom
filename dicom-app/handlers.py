@@ -228,55 +228,68 @@ def handle_create(event):
     
     attr_list = event.attribute_list
     
-    found = []
-    for index in range(len(managed_instances.items())):
-        patientName = managed_instances[index].PatientName
-        modality = managed_instances[0].ScheduledProcedureStepSequence._list[0].Modality    # noqa: E501
+    ds = Dataset()
+    
+    # Add the SOP Common module elements (Annex C.12.1)
+    ds.SOPClassUID = ModalityPerformedProcedureStep
+    ds.SOPInstanceUID = req.AffectedSOPInstanceUID
+
+    # Update with the requested attributes
+    ds.update(attr_list)
+
+    # Add the dataset to the managed SOP Instances
+    managed_instances[ds.SOPInstanceUID] = ds
+    
+    # found = []
+    # for index in range(len(managed_instances.items())):
+    #     patientName = managed_instances[index].PatientName
+    #     modality = managed_instances[0].ScheduledProcedureStepSequence._list[0].Modality    # noqa: E501
            
-        if patientName == attr_list.PatientName and modality == attr_list.Modality:
-            found.append(patientName)
+    #     if patientName == attr_list.PatientName and modality == attr_list.Modality:
+    #         found.append(patientName)
         
-        if found: 
-            # Create a Modality Performed Procedure Step SOP Class Instance
-            #   DICOM Standard, Part 3, Annex B.17
-            ds = Dataset()
+    #     if found: 
+    #         # Create a Modality Performed Procedure Step SOP Class Instance
+    #         #   DICOM Standard, Part 3, Annex B.17
+    #         ds = Dataset()
 
-            # Add the SOP Common module elements (Annex C.12.1)
-            ds.SOPClassUID = ModalityPerformedProcedureStep
-            ds.SOPInstanceUID = req.AffectedSOPInstanceUID
+    #         # Add the SOP Common module elements (Annex C.12.1)
+    #         ds.SOPClassUID = ModalityPerformedProcedureStep
+    #         ds.SOPInstanceUID = req.AffectedSOPInstanceUID
 
-            # Update with the requested attributes
-            ds.update(attr_list)
+    #         # Update with the requested attributes
+    #         ds.update(attr_list)
 
-            # Add the dataset to the managed SOP Instances
-            managed_instances[index] = ds
-            print('===============================================')
-            # print(managed_instances[index])
-            print(type(managed_instances[index]))
-            print(managed_instances[index].to_json())
-            json_file_path = 'dummy-data/data1.json'
-            # update_managed_instances(json_file_path, managed_instances[index])
-            print('===============================================')
+    #         # Add the dataset to the managed SOP Instances
+    #         managed_instances[index] = ds
+    #         print('===============================================')
+    #         # print(managed_instances[index])
+    #         print(type(managed_instances[index]))
+    #         print(managed_instances[index].to_json())
+    #         json_file_path = 'dummy-data/data1.json'
+    #         # update_managed_instances(json_file_path, managed_instances[index])
+    #         print('===============================================')
             
-            # The URL of the HTTP endpoint you want to send the data to
-            url = "http://10.20.186.205:8000/api/status"
+    #         # The URL of the HTTP endpoint you want to send the data to
+    #         url = "http://10.20.186.205:8000/api/status"
             
-            # # json_string = json.dumps(managed_instances[index], indent=4)
-            # # print(json_string)
-            data = dicom_to_json_ncreate(managed_instances[index])
-            # data = data.to_json_dict()
-            # print(data['PatientName'])
+    #         # # json_string = json.dumps(managed_instances[index], indent=4)
+    #         # # print(json_string)
+    #         data = dicom_to_json_ncreate(managed_instances[index])
+    #         # data = data.to_json_dict()
+    #         # print(data['PatientName'])
             
-            # # # Sending the data as a JSON payload
-            response = requests.post(url, data=data)
+    #         # # # Sending the data as a JSON payload
+    #         response = requests.post(url, data=data)
 
-            # Checking the response status
-            if response.status_code == 200:
-                print("Data sent successfully!")
-            else:
-                print(f"Failed to send data. Status code: {response.status_code}")
+    #         # Checking the response status
+    #         if response.status_code == 200:
+    #             print("Data sent successfully!")
+    #         else:
+    #             print(f"Failed to send data. Status code: {response.status_code}")
                         
-            break
+    #         break
+        
     # print('===============================================')
     # print(managed_instances)
     # print('===============================================')
