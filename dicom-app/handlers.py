@@ -35,12 +35,15 @@ def dicom_to_json_ncreate(ds):
     return json_data
 
 # Function to load JSON data and convert it to a Dataset
+
+
 def load_worklist_from_json(json_data):
     ds = Dataset()
     ds.PatientID = json_data['PatientID']
     ds.PatientName = json_data['PatientName']
     ds.PatientBirthDate = json_data['PatientBirthDate']
     ds.PatientSex = json_data['PatientSex']
+    ds.PatientWeight = json_data['PatientWeight']
     ds.StudyID = json_data['StudyID']
     ds.AccessionNumber = json_data['AccessionNumber']
     ds.ReferringPhysicianName = json_data['ReferringPhysician']
@@ -146,16 +149,15 @@ def handle_find(event):
     
     matching = []
 
-    for uid, instance in managed_instances.items():
-        ScheduledProcedure = instance.get('ScheduledProcedureStepSequence')
-        
-        found = [
+    for uid, found in managed_instances.items():
+        ScheduledProcedure = found.get('ScheduledProcedureStepSequence')
+        # check = []
+        check = [
             inst for inst in ScheduledProcedure if inst.ScheduledStationAETitle == ae_title  # noqa: E501
         ]
         
-        if found:
-            matching = found
-            patientName = instance.PatientName
+        if check:
+            matching.append(found)
             
     
     for instance in matching:
@@ -166,25 +168,37 @@ def handle_find(event):
         
         # Create the identifier dataset
         identifier = Dataset()
-        identifier.PatientName = patientName
+        # identifier.Modality = instance.Modality
+        # identifier.RequestedContrastAgent = ''
+        identifier.PatientName = instance.PatientName
+        identifier.PatientID = instance.PatientID
+        identifier.StudyID = instance.StudyID
+        identifier.PatientBirthDate = instance.PatientBirthDate
+        identifier.PatientSex = instance.PatientSex
+        identifier.PatientWeight = instance.PatientWeight
+        
+        # is it from the dicom or the app?
+        identifier.StudyInstanceUID = '987111' 
         
         # Create the ScheduledProcedureStepSequence dataset
-        identifier.ScheduledProcedureStepSequence = [Dataset()]
-        scheduled_procedure_step = identifier.ScheduledProcedureStepSequence[0]
-        scheduled_procedure_step.ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate  # noqa: E501
-        scheduled_procedure_step.Modality = instance.Modality
-        scheduled_procedure_step.ScheduledStationAETitle = instance.ScheduledStationAETitle  # noqa: E501
-        scheduled_procedure_step.ScheduledPerformingPhysicianName = instance.ScheduledPerformingPhysicianName  # noqa: E501
-        scheduled_procedure_step.ScheduledProcedureStepLocation = instance.ScheduledProcedureStepLocation  # noqa: E501
-        scheduled_procedure_step.PreMedication = instance.PreMedication
-        
-        # Add the ScheduledProcedureStepSequence to the identifier
-        identifier.ScheduledProcedureStepSequence = [scheduled_procedure_step]
+        # scheduled_procedure_step = Dataset()
+        # scheduled_procedure_step.ScheduledProcedureStepID = '112'
+        # scheduled_procedure_step.ScheduledStationAETitle = instance.ScheduledStationAETitle
+        # scheduled_procedure_step.ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate
+        # scheduled_procedure_step.ScheduledProcedureStepStartTime = '000000'
+        # scheduled_procedure_step.ScheduledProcedureStepEndDate = ''
+        # scheduled_procedure_step.ScheduledProcedureStepEndTime = ''
+        # scheduled_procedure_step.ScheduledPerformingPhysicianName = instance.ScheduledPerformingPhysicianName
+        # scheduled_procedure_step.ScheduledProcedureStepDescription = 'Test procedure'
+        # scheduled_procedure_step = identifier.ScheduledProcedureCodeSequence[0]
+        # scheduled_procedure_step.ScheduledStationName = 'Test Station'
+        # scheduled_procedure_step.ScheduledProcedureStepLocation = instance.ScheduledProcedureStepLocation
+        # scheduled_procedure_step.PreMedication = instance.PreMedication
+        # scheduled_procedure_step.ScheduledProcedureStepStatus = ''
+        # scheduled_procedure_step.CommentsOnTheScheduledProcedure = ''
 
-        # Continue adding the remaining fields directly to the identifier
-        # identifier.RequestedProcedureID = instance.RequestedProcedureID
-        # identifier.RequestedProcedureDescription = instance.RequestedProcedureDescription  # noqa: E501
-        # identifier.SpecialNeeds = instance.SpecialNeeds
+        # Add the ScheduledProcedureStepSequence to the identifier
+        # identifier.ScheduledProcedureStepSequence = [scheduled_procedure_step]
         
         # Pending
         yield (0xFF00, identifier)
