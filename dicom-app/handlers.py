@@ -1,6 +1,7 @@
 from pydicom.dataset import Dataset
 import requests
 import json
+import os
 
 from pynetdicom.sop_class import ModalityPerformedProcedureStep
 
@@ -83,20 +84,43 @@ def generate_dummy_data():
     # Print out the dataset to verify
     print(managed_instances[0])
     
-def save_into_managed_instances(json_file_path, patient_data):
-    """Save the JSON file data into the managed_instances dictionary."""
-    with open(json_file_path, 'r') as json_file:
-        worklist_data = json.load(json_file)
-        
-    # Convert JSON data to Dataset
-    for i in range(len(worklist_data)):
-        ds = load_worklist_from_json(worklist_data[i])
+def write_into_managed_instances(data):
+    for i in range(len(data)):
+        # Convert JSON data to Dataset
+        ds = load_worklist_from_json(data[i])
         managed_instances[i] = ds
         # Assign the dataset to managed_instances[0]
-        # Assuming managed_instances is a list with at least one element
         print('=====================')
         print(managed_instances[i])
         print('=====================')
+
+def save_data(json_file_path, patient_data):
+    if os.path.exists(json_file_path):
+        # Read the existing data from the file
+        # with open(json_file_path, 'r') as json_file:
+        #     worklist_data = json.load(json_file)
+        with open(json_file_path, 'w') as json_file:
+            json.dump(patient_data, json_file)
+
+        write_into_managed_instances(patient_data)
+        
+        return 200
+
+    else:
+        # If the directory doesn't exist, create a new one
+        os.makedirs(os.path.dirname(json_file_path), exist_ok=True)
+        with open(json_file_path, 'w') as json_file:
+            json.dump(patient_data, json_file)
+            
+        write_into_managed_instances(patient_data)
+        
+        return 200
+    
+    # if managed_instances:
+    #     # Check for duplicate StudyID
+    #     for i in range(len(patient_data)):
+    #         if patient_data[i]['StudyID'] != managed_instances.StudyID:
+    #             patient_data[i] = []
 
     # Print out the dataset to verify
     # print(managed_instances[0])
