@@ -40,5 +40,26 @@
         "ScheduledProcedureStepLocation": "*",
         "PreMedication": "*",
         "SpecialNeeds": "*"
+    },
+    {
+        "PatientID": "3",
+        "PatientName": "Edo",
+        "PatientBirthDate": "19961023",
+        "PatientSex": "M",
+        "PatientWeight": "60",
+        "StudyID": "3",
+        "AccessionNumber": "*",
+        "ReferringPhysician": "Dr^Rusniati",
+        "StudyDescription": "ok",
+        "StudyInstanceUID": "113",
+        "ScheduledProcedureStepStartDate": "20240706",
+        "Modality": "MR",
+        "RequestedProcedureID": "*",
+        "RequestedProcedureDescription": "*",
+        "ScheduledStationAETitle": "MRC26266",
+        "ScheduledPerformingPhysician": "Agung",
+        "ScheduledProcedureStepLocation": "*",
+        "PreMedication": "*",
+        "SpecialNeeds": "*"
     }
 ]
