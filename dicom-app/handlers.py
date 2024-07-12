@@ -33,8 +33,6 @@ def dicom_to_json_ncreate(ds):
     return json_data
 
 # Function to load JSON data and convert it to a Dataset
-
-
 def load_worklist_from_json(json_data):
     ds = Dataset()
     ds.PatientID = json_data['PatientID']
