@@ -6,12 +6,9 @@ import os
 from pynetdicom.sop_class import ModalityPerformedProcedureStep
 
 managed_instances = {}
-# json_data.PatientName
-# json_data.PatientID
 
 # Function to load instance to JSON
 def dicom_to_json_ncreate(ds):
-    name = ds.PatientName
     json_data = {
         'SOPInstanceUID': ds.SOPInstanceUID,
         'PatientID': ds.PatientID,
@@ -50,6 +47,7 @@ def load_worklist_from_json(json_data):
     ds.ReferringPhysicianName = json_data['ReferringPhysician']
     ds.StudyDescription = json_data['StudyDescription']
 
+    # Scheduled sequence
     ds.ScheduledProcedureStepSequence = [Dataset()]
     scheduled_procedure_step = ds.ScheduledProcedureStepSequence[0]
     scheduled_procedure_step.ScheduledProcedureStepStartDate = json_data[
@@ -69,21 +67,12 @@ def load_worklist_from_json(json_data):
 
     return ds
 
-def generate_dummy_data():
-    # Load the dummy worklist JSON data
-    with open('dummy_data/data.json', 'r') as file:
-        worklist_data = json.load(file)
-
-    # Convert JSON data to Dataset
-    ds = load_worklist_from_json(worklist_data)
-
-    # Assign the dataset to managed_instances[0]
-    # Assuming managed_instances is a list with at least one element
-    managed_instances[0] = ds
-
-    # Print out the dataset to verify
-    print(managed_instances[0])
+def init_managed_instances(json_file_path):
+    with open(json_file_path, 'r') as json_file:
+        worklist_data = json.load(json_file)
     
+    update_managed_instances(worklist_data)
+
 def update_managed_instances(data):
     for i in range(len(data)):
         # Convert JSON data to Dataset
@@ -96,7 +85,6 @@ def update_managed_instances(data):
 
 def save_data(json_file_path, patient_data):
     if os.path.exists(json_file_path):
-        
         # Read the existing data from the file
         with open(json_file_path, 'r') as json_file:
             worklist_data = json.load(json_file)
@@ -130,15 +118,6 @@ def save_data(json_file_path, patient_data):
         update_managed_instances(patient_data)
         
         return 200
-    
-    # if managed_instances:
-    #     # Check for duplicate StudyID
-    #     for i in range(len(patient_data)):
-    #         if patient_data[i]['StudyID'] != managed_instances.StudyID:
-    #             patient_data[i] = []
-
-    # Print out the dataset to verify
-    # print(managed_instances[0])
     
 def handle_echo(event):
     """Handle a ECHO request event."""
