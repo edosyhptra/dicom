@@ -15,7 +15,7 @@ from pynetdicom.status import code_to_category
 ct_series_uid = generate_uid()
 ct_instance_uids = [generate_uid() for ii in range(10)]
 ct_study_uid = generate_uid()
-mpps_instance_uid = "1.2.826.0.1.3680043.8.498.28761294184329046033875437450408291867"
+mpps_instance_uid = "1.2.826.0.1.3680043.8.498.10795914700043632845841448365454771151"
 # Our N-SET *Modification List*
 
 def build_mod_list(series_instance, sop_instances):
@@ -23,7 +23,7 @@ def build_mod_list(series_instance, sop_instances):
     ds.PerformedSeriesSequence = [Dataset()]
 
     series_seq = ds.PerformedSeriesSequence
-    series_seq[0].PerformingPhysicianName = "Dr. Agung"
+    series_seq[0].PerformingPhysicianName = "Agung"
     series_seq[0].ProtocolName = "Some protocol"
     # series_seq[0].OperatorName = None
     series_seq[0].SeriesInstanceUID = series_instance
