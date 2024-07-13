@@ -49,8 +49,18 @@ def load_worklist_from_json(json_data):
     ds.AccessionNumber = json_data.get('AccessionNumber', '')
     ds.ReferringPhysicianName = json_data.get('ReferringPhysician', '')
     ds.StudyDescription = json_data.get('StudyDescription', '')
+    
+    # N-CREATE
     ds.SOPClassUID = json_data.get('SOPClassUID', '')
     ds.SOPInstanceUID = json_data.get('SOPInstanceUID', '')
+    ds.PerformedProcedureStepStatus = json_data.get(
+        'PerformedProcedureStepStatus', '')
+    
+    # N-SET
+    ds.PerformedProcedureStepEndDate = json_data.get(
+        'PerformedProcedureStepEndDate', '')
+    ds.PerformedProcedureStepEndTime = json_data.get(
+        'PerformedProcedureStepEndTime ', '')
     ds.PerformedProcedureStepStatus = json_data.get(
         'PerformedProcedureStepStatus', '')
 
@@ -334,30 +344,43 @@ def handle_set(event):
     print('SOP Instance UID: ', req.RequestedSOPInstanceUID)
 
     # found = False 
+    index = 0
     
-    for i, (key, value) in enumerate(managed_instances.items()):
-        print(managed_instances[i].SOPInstanceUID)
+    for i in range(len(managed_instances)):
         if req.RequestedSOPInstanceUID == managed_instances[i].SOPInstanceUID:
             index = i
-            found = True
-            
-            break
-        
-    if not found:
-        print('SOP Instance not recognised')
-        # Failure - SOP Instance not recognised
-        return 0x0112, None
-    
+        else:
+            # Failure - SOP Instance not recognised
+            return 0x0112, None
     
     # ds = managed_instances[req.RequestedSOPInstanceUID]
     ds = managed_instances[index]
 
     # The N-SET request's *Modification List* dataset
     mod_list = event.attribute_list
-
-    # Skip other tests...
-    url = "http://10.20.186.205:8000/api/status"
     ds.update(mod_list)
+    
+    if 'PerformedProcedureStepStatus' in mod_list:
+        # Update database
+        if os.path.exists(json_file_path):
+            # Read the existing data from the file
+            with open(json_file_path, 'r') as json_file:
+                worklist_data = json.load(json_file)
+
+            worklist_data[index]["PerformedProcedureStepStatus"] = mod_list.PerformedProcedureStepStatus  # noqa: E501
+            worklist_data[index]["PerformedProcedureStepEndDate"] = mod_list.PerformedProcedureStepEndDate  # noqa: E501
+            worklist_data[index]["PerformedProcedureStepEndTime"] = mod_list.PerformedProcedureStepEndTime  # noqa: E501
+
+            with open(json_file_path, 'w') as json_file:
+                json.dump(worklist_data, json_file, indent=4)
+                
+        return 0x0000, ds
+    
+    # Skip other tests...
+    
+    # url = "http://10.20.186.205:8000/api/status"
+
+    
     # data = dicom_to_json(ds)
     # data = data.to_json_dict()
     # print(type(data))
@@ -388,7 +411,4 @@ def handle_set(event):
     #         f'Failed to send dataset to server. Status code: {response.status_code}')
 
     # Return success status and updated dataset
-    return 0x0000, ds
-
-    # Return status, dataset
     return 0x0000, ds

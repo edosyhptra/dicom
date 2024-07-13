@@ -21,7 +21,9 @@
         "PreMedication": "*",
         "SpecialNeeds": "*",
         "SOPClassUID": "1.2.840.10008.3.1.2.3.3",
-        "SOPInstanceUID": "1.2.826.0.1.3680043.8.498.70377481192721021676509063933595915432",
-        "PerformedProcedureStepStatus": "IN PROGRESS"
+        "SOPInstanceUID": "1.2.826.0.1.3680043.8.498.10795914700043632845841448365454771151",
+        "PerformedProcedureStepStatus": "COMPLETED",
+        "PerformedProcedureStepEndDate": "20000101",
+        "PerformedProcedureStepEndTime": "1300"
     }
 ]
