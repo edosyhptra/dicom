@@ -14,6 +14,7 @@ import os
 
 __aetitle__ = "ADM_SCP"
 __version__ = "0.6.0"
+json_file_path = 'dummy-data/data1.json'
 
 def _setup_argparser():
     parser = argparse.ArgumentParser(
@@ -109,25 +110,20 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         #                    'PreMedication', 'SpecialNeeds']
         
         if True:
+            # Write the JSON data to the specified file
+
+            # Save the JSON file data into managed_instances dict
+            status = hd.save_data(json_file_path, patient_data)
+            
             # Respond that the data was received
             response = {
                 "message": "Data received successfully",
                 "data": patient_data
             }
-            self.send_response(200)
+            self.send_response(status)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps(response).encode())
-            
-            # Write the JSON data to the specified file
-            json_file_path = 'dummy-data/data1.json'
-            os.makedirs(os.path.dirname(json_file_path), exist_ok=True)
-            
-            with open(json_file_path, 'w') as json_file:
-                json.dump(patient_data, json_file)
-
-            # Save the JSON file data into managed_instances dict
-            hd.save_into_managed_instances(json_file_path, patient_data)
         else:
             response = {
                 "message": "Invalid data format",
@@ -160,7 +156,10 @@ def start_dicom_ae():
                 (evt.EVT_C_FIND, hd.handle_find),
                 (evt.EVT_C_ECHO, hd.handle_echo)]
     
-    # Generate dummy data
+    # Read existing data
+    if(os.path.exists(json_file_path)):
+        hd.init_managed_instances(json_file_path)
+    
     # hd.generate_dummy_data()
     
     # Start listening for incoming association requests

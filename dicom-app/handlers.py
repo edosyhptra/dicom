@@ -1,16 +1,14 @@
 from pydicom.dataset import Dataset
 import requests
 import json
+import os
 
 from pynetdicom.sop_class import ModalityPerformedProcedureStep
 
 managed_instances = {}
-# json_data.PatientName
-# json_data.PatientID
 
 # Function to load instance to JSON
 def dicom_to_json_ncreate(ds):
-    name = ds.PatientName
     json_data = {
         'SOPInstanceUID': ds.SOPInstanceUID,
         'PatientID': ds.PatientID,
@@ -35,8 +33,6 @@ def dicom_to_json_ncreate(ds):
     return json_data
 
 # Function to load JSON data and convert it to a Dataset
-
-
 def load_worklist_from_json(json_data):
     ds = Dataset()
     ds.PatientID = json_data['PatientID']
@@ -45,6 +41,8 @@ def load_worklist_from_json(json_data):
     ds.PatientSex = json_data['PatientSex']
     ds.PatientWeight = json_data['PatientWeight']
     ds.StudyID = json_data['StudyID']
+    ds.StudyInstanceUID = json_data['StudyInstanceUID']
+    ds.ScheduledProcedureStepID = json_data['ScheduledProcedureStepID']
     ds.AccessionNumber = json_data['AccessionNumber']
     ds.ReferringPhysicianName = json_data['ReferringPhysician']
     ds.StudyDescription = json_data['StudyDescription']
@@ -68,64 +66,65 @@ def load_worklist_from_json(json_data):
 
     return ds
 
-def generate_dummy_data():
-    # Load the dummy worklist JSON data
-    with open('dummy_data/data.json', 'r') as file:
-        worklist_data = json.load(file)
-
-    # Convert JSON data to Dataset
-    ds = load_worklist_from_json(worklist_data)
-
-    # Assign the dataset to managed_instances[0]
-    # Assuming managed_instances is a list with at least one element
-    managed_instances[0] = ds
-
-    # Print out the dataset to verify
-    print(managed_instances[0])
+def init_managed_instances(json_file_path):
+    with open(json_file_path, 'r') as json_file:
+        worklist_data = json.load(json_file)
     
-def save_into_managed_instances(json_file_path, patient_data):
-    """Save the JSON file data into the managed_instances dictionary."""
-    with open(json_file_path, 'r') as json_file:
-        worklist_data = json.load(json_file)
+    update_managed_instances(worklist_data)
+
+def update_managed_instances(data):
+    for i in range(len(data)):
+        # Convert JSON data to Dataset
+        ds = load_worklist_from_json(data[i])
+        managed_instances[i] = ds
+        # Assign the dataset to managed_instances[0]
+        print('=====================')
+        print(managed_instances[i])
+        print('=====================')
+
+def save_data(json_file_path, patient_data):
+    if os.path.exists(json_file_path):
+        # Read the existing data from the file
+        with open(json_file_path, 'r') as json_file:
+            worklist_data = json.load(json_file)
+            
+        # Create a list of StudyIDs in the worklist_data
+        worklist_study_ids = {entry['StudyID'] for entry in worklist_data}
+
+        # Check for duplicate StudyID
+        patient_data = [
+            entry for entry in patient_data if entry['StudyID'] not in worklist_study_ids]
         
-    # Convert JSON data to Dataset
-    for i in range(len(worklist_data)):
-        ds = load_worklist_from_json(worklist_data[i])
-        managed_instances[i] = ds
-        # Assign the dataset to managed_instances[0]
-        # Assuming managed_instances is a list with at least one element
-        print('=====================')
-        print(managed_instances[i])
-        print('=====================')
+        if not patient_data:
+            return 200
+        else:
+            # Update JSON file
+            for i in range(len(patient_data)):
+                worklist_data.append(patient_data[i])
+            with open(json_file_path, 'w') as json_file:
+                json.dump(worklist_data, json_file, indent=4)
 
-    # Print out the dataset to verify
-    # print(managed_instances[0])
+            update_managed_instances(worklist_data)
 
+        return 200
 
-def update_managed_instances(json_file_path, patient_data):
-    """Save the JSON file data into the managed_instances dictionary."""
-    with open(json_file_path, 'r') as json_file:
-        worklist_data = json.load(json_file)
-
-    # Convert JSON data to Dataset
-    for i in range(len(worklist_data)):
-        ds = load_worklist_from_json(worklist_data[i])
-        managed_instances[i] = ds
-        # Assign the dataset to managed_instances[0]
-        # Assuming managed_instances is a list with at least one element
-        print('=====================')
-        print(managed_instances[i])
-        print('=====================')
-
-    # Print out the dataset to verify
-    # print(managed_instances[0])
-
+    else:
+        # If the directory doesn't exist, create a new one
+        os.makedirs(os.path.dirname(json_file_path), exist_ok=True)
+        with open(json_file_path, 'w') as json_file:
+            json.dump(patient_data, json_file)
+            
+        update_managed_instances(patient_data)
+        
+        return 200
+    
 def handle_echo(event):
     """Handle a ECHO request event."""
     requestor = event.assoc.requestorr
     timestamp = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
     addr, port = requestor.address, requestor.port
     # logger.info(f"Received C-FIND request from {addr}:{port} at {timestamp}")
+    
     print(f"Received ECHO request from {addr}:{port} at {timestamp}")
     
     return 0x0000
