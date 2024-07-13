@@ -41,11 +41,12 @@ def load_worklist_from_json(json_data):
     ds.PatientSex = json_data['PatientSex']
     ds.PatientWeight = json_data['PatientWeight']
     ds.StudyID = json_data['StudyID']
+    ds.StudyInstanceUID = json_data['StudyInstanceUID']
+    ds.ScheduledProcedureStepID = json_data['ScheduledProcedureStepID']
     ds.AccessionNumber = json_data['AccessionNumber']
     ds.ReferringPhysicianName = json_data['ReferringPhysician']
     ds.StudyDescription = json_data['StudyDescription']
 
-    # Scheduled sequence
     ds.ScheduledProcedureStepSequence = [Dataset()]
     scheduled_procedure_step = ds.ScheduledProcedureStepSequence[0]
     scheduled_procedure_step.ScheduledProcedureStepStartDate = json_data[
