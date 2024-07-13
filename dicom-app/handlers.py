@@ -6,6 +6,7 @@ import os
 from pynetdicom.sop_class import ModalityPerformedProcedureStep
 
 managed_instances = {}
+json_file_path = 'dummy-data/data1.json'
 
 # Function to load instance to JSON
 def dicom_to_json_ncreate(ds):
@@ -33,36 +34,43 @@ def dicom_to_json_ncreate(ds):
     return json_data
 
 # Function to load JSON data and convert it to a Dataset
+
+
 def load_worklist_from_json(json_data):
     ds = Dataset()
-    ds.PatientID = json_data['PatientID']
-    ds.PatientName = json_data['PatientName']
-    ds.PatientBirthDate = json_data['PatientBirthDate']
-    ds.PatientSex = json_data['PatientSex']
-    ds.PatientWeight = json_data['PatientWeight']
-    ds.StudyID = json_data['StudyID']
-    ds.StudyInstanceUID = json_data['StudyInstanceUID']
-    ds.ScheduledProcedureStepID = json_data['ScheduledProcedureStepID']
-    ds.AccessionNumber = json_data['AccessionNumber']
-    ds.ReferringPhysicianName = json_data['ReferringPhysician']
-    ds.StudyDescription = json_data['StudyDescription']
+    ds.PatientID = json_data.get('PatientID', '')
+    ds.PatientName = json_data.get('PatientName', '')
+    ds.PatientBirthDate = json_data.get('PatientBirthDate', '')
+    ds.PatientSex = json_data.get('PatientSex', '')
+    ds.PatientWeight = json_data.get('PatientWeight', '')
+    ds.StudyID = json_data.get('StudyID', '')
+    ds.StudyInstanceUID = json_data.get('StudyInstanceUID', '')
+    ds.ScheduledProcedureStepID = json_data.get('ScheduledProcedureStepID', '')
+    ds.AccessionNumber = json_data.get('AccessionNumber', '')
+    ds.ReferringPhysicianName = json_data.get('ReferringPhysician', '')
+    ds.StudyDescription = json_data.get('StudyDescription', '')
+    ds.SOPClassUID = json_data.get('SOPClassUID', '')
+    ds.SOPInstanceUID = json_data.get('SOPInstanceUID', '')
+    ds.PerformedProcedureStepStatus = json_data.get(
+        'PerformedProcedureStepStatus', '')
 
     ds.ScheduledProcedureStepSequence = [Dataset()]
     scheduled_procedure_step = ds.ScheduledProcedureStepSequence[0]
-    scheduled_procedure_step.ScheduledProcedureStepStartDate = json_data[
-        'ScheduledProcedureStepStartDate']
-    scheduled_procedure_step.Modality = json_data['Modality']
-    scheduled_procedure_step.ScheduledStationAETitle = json_data['ScheduledStationAETitle']  # noqa: E501
-    scheduled_procedure_step.ScheduledPerformingPhysicianName = json_data[
-        'ScheduledPerformingPhysician']
-    scheduled_procedure_step.ScheduledProcedureStepLocation = json_data[
-        'ScheduledProcedureStepLocation']
-    scheduled_procedure_step.PreMedication = json_data['PreMedication']
+    scheduled_procedure_step.ScheduledProcedureStepStartDate = json_data.get(
+        'ScheduledProcedureStepStartDate', '')
+    scheduled_procedure_step.Modality = json_data.get('Modality', '')
+    scheduled_procedure_step.ScheduledStationAETitle = json_data.get('ScheduledStationAETitle', '')  # noqa: E501
+    scheduled_procedure_step.ScheduledPerformingPhysicianName = json_data.get(
+        'ScheduledPerformingPhysician', '')
+    scheduled_procedure_step.ScheduledProcedureStepLocation = json_data.get(
+        'ScheduledProcedureStepLocation', '')
+    scheduled_procedure_step.PreMedication = json_data.get('PreMedication', '')
 
     ds.ScheduledProcedureStepSequence = [scheduled_procedure_step]
-    ds.RequestedProcedureID = json_data['RequestedProcedureID']
-    ds.RequestedProcedureDescription = json_data['RequestedProcedureDescription']
-    ds.SpecialNeeds = json_data['SpecialNeeds']
+    ds.RequestedProcedureID = json_data.get('RequestedProcedureID', '')
+    ds.RequestedProcedureDescription = json_data.get(
+        'RequestedProcedureDescription', '')
+    ds.SpecialNeeds = json_data.get('SpecialNeeds', '')
 
     return ds
 
@@ -215,18 +223,22 @@ def handle_create(event):
         # Failed - invalid attribute value
         return 0x0106, None
     
-    # for i in range(len(managed_instances)):
-    #     if req.AffectedSOPInstanceUID in managed_instances[i].SOPClassUID: 
-    #         # Failed - duplicate SOP Instance
-    #         print('Duplicate SOP Instance')
-    #         return 0x0111, None
-        
-    if req.AffectedSOPInstanceUID in managed_instances:
-        # Failed - duplicate SOP Instance
-        return 0x0111, None
+    for i in range(len(managed_instances)):
+        if req.AffectedSOPInstanceUID == managed_instances[i].SOPInstanceUID:
+            # Failed - duplicate SOP Instance
+            return 0x0111, None
+    
+    reqID = event.attribute_list.ScheduledStepAttributesSequence._list[
+        0].ScheduledProcedureStepID
+    index = 0
+
+    # Get corresponding ScheduledProcedureStepID
+    for i in range(len(managed_instances.items())):
+        if reqID == managed_instances[i].ScheduledProcedureStepID:
+            index = i
+            break
     
     attr_list = event.attribute_list
-    
     ds = Dataset()
     
     # Add the SOP Common module elements (Annex C.12.1)
@@ -237,8 +249,23 @@ def handle_create(event):
     ds.update(attr_list)
 
     # Add the dataset to the managed SOP Instances
-    managed_instances[ds.SOPInstanceUID] = ds
+    managed_instances[index].SOPClassUID = ModalityPerformedProcedureStep
+    managed_instances[index].SOPInstanceUID = req.AffectedSOPInstanceUID
+    managed_instances[index].PerformedProcedureStepStatus = event._decoded.PerformedProcedureStepStatus
     
+    # Updata database
+    if os.path.exists(json_file_path):
+        # Read the existing data from the file
+        with open(json_file_path, 'r') as json_file:
+            worklist_data = json.load(json_file)
+            
+        worklist_data[index]["SOPClassUID"] = ModalityPerformedProcedureStep
+        worklist_data[index]["SOPInstanceUID"] = req.AffectedSOPInstanceUID
+        worklist_data[index]["PerformedProcedureStepStatus"] = event._decoded.PerformedProcedureStepStatus
+        
+        with open(json_file_path, 'w') as json_file:
+            json.dump(worklist_data, json_file, indent=4)
+          
     # found = []
     # for index in range(len(managed_instances.items())):
     #     patientName = managed_instances[index].PatientName

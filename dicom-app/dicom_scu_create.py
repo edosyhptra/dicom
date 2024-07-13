@@ -31,12 +31,12 @@ def build_attr_list():
     step_seq[0].AccessionNumber = '*'
     step_seq[0].RequestedProcedureID = "*"
     step_seq[0].RequestedProcedureDescription = '*'
-    step_seq[0].ScheduledProcedureStepID = "1"
+    step_seq[0].ScheduledProcedureStepID = "114"
     step_seq[0].ScheduledProcedureStepDescription = 'Some procedure step'
     step_seq[0].ScheduledProcedureProtocolCodeSequence = []
-    ds.PatientName = "Reinert^Yosua^Rumagit"
-    ds.PatientID = '1'
-    ds.PatientBirthDate = '19921124'
+    ds.PatientName = "PRABOWO"
+    ds.PatientID = '4'
+    ds.PatientBirthDate = '20240702'
     ds.PatientSex = 'M'
     ds.ReferencedPatientSequence = []
     # Performed Procedure Step Information
@@ -44,7 +44,7 @@ def build_attr_list():
     ds.PerformedStationAETitle = 'dicom1'
     ds.PerformedStationName = 'Radio1'
     ds.PerformedLocation = 'Some location'
-    ds.PerformedProcedureStepStartDate = '20240702'
+    ds.PerformedProcedureStepStartDate = '20240710'
     ds.PerformedProcedureStepStartTime = '1300'
     ds.PerformedProcedureStepStatus = 'IN PROGRESS'
     ds.PerformedProcedureStepDescription = 'Some description'
@@ -53,7 +53,7 @@ def build_attr_list():
     ds.PerformedProcedureStepEndDate = None
     ds.PerformedProcedureStepEndTime = None
     # Image Acquisition Results
-    ds.Modality = 'CT1234'
+    ds.Modality = 'MR'
     ds.StudyID = "4"
     ds.PerformedProtocolCodeSequence = []
     ds.PerformedSeriesSequence = []
