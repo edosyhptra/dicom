@@ -136,7 +136,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 # Function to start the HTTP server
 def start_http_server():
-    server_address = ('localhost', 8080)
+    server_address = ('192.168.1.217', 8080)
     httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
     print("HTTP server running on port 8080")
     httpd.serve_forever()
@@ -164,7 +164,7 @@ def start_dicom_ae():
     
     # Start listening for incoming association requests
     print("DICOM AE server running on port 1234")
-    ae.start_server(("127.0.0.1", 1234), evt_handlers=handlers)
+    ae.start_server(("192.168.1.217", 1234), evt_handlers=handlers)
     
 # Run both servers in parallel
 if __name__ == "__main__":
