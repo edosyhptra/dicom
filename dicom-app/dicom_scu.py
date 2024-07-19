@@ -21,7 +21,7 @@ item.ScheduledStationAETitle = 'MRC26266'
 # item.Modality = 'Radio1'
 
 # Associate with the peer AE at IP 127.0.0.1 and port 11112
-assoc = ae.associate("127.0.0.1", 1234)
+assoc = ae.associate("192.168.1.217", 1234)
 if assoc.is_established:
     # Send the C-FIND request
     responses = assoc.send_c_find(

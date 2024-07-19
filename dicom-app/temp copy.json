@@ -1,0 +1,24 @@
+[
+    {
+        "PatientID": 1,
+        "PatientName": "Reinert^Yosua^Rumagit",
+        "PatientBirthDate": "19921124",
+        "PatientSex": "M",
+        "PatientWeight": "87",
+        "StudyID": "6",
+        "AccessionNumber": "^",
+        "ReferringPhysician": "Dr^Sylvia",
+        "StudyDescription": "ok",
+        "StudyInstanceUID": "116",
+        "ScheduledProcedureStepID": "116",
+        "ScheduledProcedureStepStartDate": "19921124",
+        "Modality": "MR",
+        "RequestedProcedureID": "*",
+        "RequestedProcedureDescription": "*",
+        "ScheduledStationAETitle": "MRC26266",
+        "ScheduledPerformingPhysician": "Joko^Sutanto",
+        "ScheduledProcedureStepLocation": "*",
+        "PreMedication": "*",
+        "SpecialNeeds": "*"
+    }
+]
