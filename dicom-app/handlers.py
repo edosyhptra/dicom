@@ -343,16 +343,20 @@ def handle_set(event):
     print(f"Received N-SET request from {addr}:{port} at {timestamp}")
     print('SOP Instance UID: ', req.RequestedSOPInstanceUID)
 
+    print('=======================DATA MASUK======================')
+    print(event.attribute_list)
+    print('=======================================================')
+
     # found = False 
     index = 0
     
     for i in range(len(managed_instances)):
         if req.RequestedSOPInstanceUID == managed_instances[i].SOPInstanceUID:
             index = i
-        else:
-            # Failure - SOP Instance not recognised
-            return 0x0112, None
-    
+        # else:
+        #     # Failure - SOP Instance not recognised
+        #     return 0x0112, None
+
     # ds = managed_instances[req.RequestedSOPInstanceUID]
     ds = managed_instances[index]
 
