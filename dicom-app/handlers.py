@@ -195,13 +195,13 @@ def handle_find(event):
         identifier.PatientWeight = instance.PatientWeight
         
         # is it from the dicom or the app?
-        identifier.StudyInstanceUID = '987111' 
+        identifier.StudyInstanceUID = instance.StudyInstanceUID
         
         # Create the ScheduledProcedureStepSequence dataset
-        # scheduled_procedure_step = Dataset()
-        # scheduled_procedure_step.ScheduledProcedureStepID = '112'
-        # scheduled_procedure_step.ScheduledStationAETitle = instance.ScheduledStationAETitle
-        # scheduled_procedure_step.ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepStartDate
+        scheduled_procedure_step = Dataset()
+        scheduled_procedure_step.ScheduledProcedureStepID = instance.ScheduledProcedureStepID
+        scheduled_procedure_step.ScheduledStationAETitle = "MRC26266"
+        scheduled_procedure_step.ScheduledProcedureStepStartDate = instance.ScheduledProcedureStepSequence._list[0].ScheduledProcedureStepStartDate
         # scheduled_procedure_step.ScheduledProcedureStepStartTime = '000000'
         # scheduled_procedure_step.ScheduledProcedureStepEndDate = ''
         # scheduled_procedure_step.ScheduledProcedureStepEndTime = ''
@@ -215,7 +215,7 @@ def handle_find(event):
         # scheduled_procedure_step.CommentsOnTheScheduledProcedure = ''
 
         # Add the ScheduledProcedureStepSequence to the identifier
-        # identifier.ScheduledProcedureStepSequence = [scheduled_procedure_step]
+        identifier.ScheduledProcedureStepSequence = [scheduled_procedure_step]
         
         # Pending
         yield (0xFF00, identifier)

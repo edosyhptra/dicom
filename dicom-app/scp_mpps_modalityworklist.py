@@ -1,7 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
 import json
-from pynetdicom import AE, evt
+from pynetdicom import AE, evt, debug_logger
 from pynetdicom.sop_class import (
     ModalityPerformedProcedureStep, 
     ModalityWorklistInformationFind,
@@ -11,6 +11,9 @@ from pynetdicom.sop_class import (
 import handlers as hd
 import argparse
 import os
+import logging
+
+debug_logger()
 
 __aetitle__ = "ADM_SCP"
 __version__ = "0.6.0"
