@@ -31,20 +31,21 @@ def build_attr_list():
     step_seq[0].AccessionNumber = '*'
     step_seq[0].RequestedProcedureID = "*"
     step_seq[0].RequestedProcedureDescription = '*'
-    step_seq[0].ScheduledProcedureStepID = "114"
+    step_seq[0].ScheduledProcedureStepID = "112"
     step_seq[0].ScheduledProcedureStepDescription = 'Some procedure step'
     step_seq[0].ScheduledProcedureProtocolCodeSequence = []
-    ds.PatientName = "PRABOWO"
-    ds.PatientID = '4'
-    ds.PatientBirthDate = '20240702'
+    ds.PatientName = "OWEN^AGITZA^JAYA.^TN"
+    ds.PatientID = '7'
+    ds.PatientBirthDate = '19990602'
     ds.PatientSex = 'M'
+    ds.RequestedProcedureID = '1c14beb3-a74f-4e40-affc-874cf7884681'
     ds.ReferencedPatientSequence = []
     # Performed Procedure Step Information
     ds.PerformedProcedureStepID = "1"
-    ds.PerformedStationAETitle = 'dicom1'
+    ds.PerformedStationAETitle = 'MRC26266'
     ds.PerformedStationName = 'Radio1'
     ds.PerformedLocation = 'Some location'
-    ds.PerformedProcedureStepStartDate = '20240710'
+    ds.PerformedProcedureStepStartDate = '20240718'
     ds.PerformedProcedureStepStartTime = '1300'
     ds.PerformedProcedureStepStatus = 'IN PROGRESS'
     ds.PerformedProcedureStepDescription = 'Some description'
@@ -74,7 +75,7 @@ def main():
     ae.add_requested_context(ModalityPerformedProcedureStep)
 
     # Associate with peer AE at IP 127.0.0.1 and port 1234
-    assoc = ae.associate("127.0.0.1", 1234)
+    assoc = ae.associate("192.168.1.217", 1234)
 
     if assoc.is_established:
         # Use the N-CREATE service to send a request to create a SOP Instance

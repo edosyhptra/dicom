@@ -15,7 +15,7 @@ from pynetdicom.status import code_to_category
 ct_series_uid = generate_uid()
 ct_instance_uids = [generate_uid() for ii in range(10)]
 ct_study_uid = generate_uid()
-mpps_instance_uid = "1.2.826.0.1.3680043.8.498.10795914700043632845841448365454771151"
+mpps_instance_uid = "1.2.826.0.1.3680043.8.498.21578373939655404106399935542699974624"
 # Our N-SET *Modification List*
 
 def build_mod_list(series_instance, sop_instances):
@@ -57,7 +57,7 @@ ae = AE(ae_title='dicom1')
 ae.add_requested_context(ModalityPerformedProcedureStep)
 
 # Associate with peer again
-assoc = ae.associate("127.0.0.1", 1234)
+assoc = ae.associate("192.168.1.217", 1234)
 
 if assoc.is_established:
     # Use the N-SET service to update the SOP Instance

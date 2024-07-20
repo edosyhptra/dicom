@@ -11,24 +11,11 @@ json_file_path = 'dummy-data/data1.json'
 # Function to load instance to JSON
 def dicom_to_json_ncreate(ds):
     json_data = {
-        'SOPInstanceUID': ds.SOPInstanceUID,
-        'PatientID': ds.PatientID,
-        'PatientName': ds.PatientName.alphabetic,
-        'PatientBirthDate': ds.PatientBirthDate,
-        'PatientSex': ds.PatientSex,
-        'StudyID': ds.StudyID,
-        'PerformedProcedureStepID': ds.PerformedProcedureStepID,
-        'PerformedStationAETitle': ds.PerformedStationAETitle,
-        'PerformedStationName': ds.PerformedStationName,
-        'PerformedLocation': ds.PerformedLocation,
-        'PerformedProcedureStepStartDate': ds.PerformedProcedureStepStartDate,
-        'PerformedProcedureStepStartTime': ds.PerformedProcedureStepStartTime,
-        'PerformedProcedureStepStatus': ds.PerformedProcedureStepStatus,
-        'PerformedProcedureStepDescription': ds.PerformedProcedureStepDescription,
-        'PerformedProcedureTypeDescription': ds.PerformedProcedureTypeDescription,
-        'PerformedProcedureCodeSequence': ds.PerformedProcedureCodeSequence,
-        'PerformedProcedureStepEndDate': ds.PerformedProcedureStepEndDate,
-        'PerformedProcedureStepEndTime': ds.PerformedProcedureStepEndTime
+        'StudyID': ds['StudyID'],
+        "SOPClassUID": ds['SOPClassUID'],
+        "SOPInstanceUID": ds['SOPInstanceUID'],
+        "PerformedProcedureStepStatus": ds['PerformedProcedureStepStatus'],
+        "RequestedProcedureID": ds['RequestedProcedureID'],
     }
 
     return json_data
@@ -275,60 +262,26 @@ def handle_create(event):
         
         with open(json_file_path, 'w') as json_file:
             json.dump(worklist_data, json_file, indent=4)
-          
-    # found = []
-    # for index in range(len(managed_instances.items())):
-    #     patientName = managed_instances[index].PatientName
-    #     modality = managed_instances[0].ScheduledProcedureStepSequence._list[0].Modality    # noqa: E501
-           
-    #     if patientName == attr_list.PatientName and modality == attr_list.Modality:
-    #         found.append(patientName)
         
-    #     if found: 
-    #         # Create a Modality Performed Procedure Step SOP Class Instance
-    #         #   DICOM Standard, Part 3, Annex B.17
-    #         ds = Dataset()
-
-    #         # Add the SOP Common module elements (Annex C.12.1)
-    #         ds.SOPClassUID = ModalityPerformedProcedureStep
-    #         ds.SOPInstanceUID = req.AffectedSOPInstanceUID
-
-    #         # Update with the requested attributes
-    #         ds.update(attr_list)
-
-    #         # Add the dataset to the managed SOP Instances
-    #         managed_instances[index] = ds
-    #         print('===============================================')
-    #         # print(managed_instances[index])
-    #         print(type(managed_instances[index]))
-    #         print(managed_instances[index].to_json())
-    #         json_file_path = 'dummy-data/data1.json'
-    #         # update_managed_instances(json_file_path, managed_instances[index])
-    #         print('===============================================')
+        # send data to app
+        print('===============================================')
             
-    #         # The URL of the HTTP endpoint you want to send the data to
-    #         url = "http://10.20.186.205:8000/api/status"
+        # The URL of the HTTP endpoint you want to send the data to
+        url = "http://192.168.1.227:8000/api/status"
             
-    #         # # json_string = json.dumps(managed_instances[index], indent=4)
-    #         # # print(json_string)
-    #         data = dicom_to_json_ncreate(managed_instances[index])
-    #         # data = data.to_json_dict()
-    #         # print(data['PatientName'])
+        json_string = json.dumps(worklist_data[index], indent=4)
+        # print(json_string)
+        data = dicom_to_json_ncreate(worklist_data[index])
+        # data = data.to_json()
             
-    #         # # # Sending the data as a JSON payload
-    #         response = requests.post(url, data=data)
+        # Sending the data as a JSON payload
+        response = requests.post(url, data=data)
 
-    #         # Checking the response status
-    #         if response.status_code == 200:
-    #             print("Data sent successfully!")
-    #         else:
-    #             print(f"Failed to send data. Status code: {response.status_code}")
-                        
-    #         break
-        
-    # print('===============================================')
-    # print(managed_instances)
-    # print('===============================================')
+        # Checking the response status
+        if response.status_code == 200:
+            print("Data sent successfully!")
+        else:
+            print(f"Failed to send data. Status code: {response.status_code}")
 
     # Return status, dataset
     return 0x0000, ds
@@ -353,6 +306,9 @@ def handle_set(event):
     for i in range(len(managed_instances)):
         if req.RequestedSOPInstanceUID == managed_instances[i].SOPInstanceUID:
             index = i
+        # '1.2.826.0.1.3680043.8.498.16533694336491372306149960584237298569'
+        # '1.2.826.0.1.3680043.8.498.96731870169722659706698550544895375999'
+        # req.RequestedSOPInstanceUID
         # else:
         #     # Failure - SOP Instance not recognised
         #     return 0x0112, None
@@ -377,14 +333,35 @@ def handle_set(event):
 
             with open(json_file_path, 'w') as json_file:
                 json.dump(worklist_data, json_file, indent=4)
+            
+            if mod_list.PerformedProcedureStepStatus == 'COMPLETED':
+                # send data to app
+                print('===============================================')
+                # The URL of the HTTP endpoint you want to send the data to
+                url = "http://192.168.1.227:8000/api/status"
+                    
+                json_string = json.dumps(worklist_data[index], indent=4)
+                #print(json_string)
+                data = dicom_to_json_ncreate(worklist_data[index])
+                #data = data.to_json()
+                    
+                # Sending the data as a JSON payload
+                response = requests.post(url, data=data)
+
+                # Checking the response status
+                if response.status_code == 200:
+                    print("Data sent successfully!")
+                else:
+                    print(f"Failed to send data. Status code: {response.status_code}")
+    
                 
         return 0x0000, ds
     
-    # Skip other tests...
+    # mod_list.PerformedProcedureStepStatus 
     
     # url = "http://10.20.186.205:8000/api/status"
+    # Skip other tests...
 
-    
     # data = dicom_to_json(ds)
     # data = data.to_json_dict()
     # print(type(data))
