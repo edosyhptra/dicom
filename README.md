@@ -1,17 +1,13 @@
-Sure! Here's a draft for your `README.md`:
-
----
-
 # DICOM Application
 
-This application facilitates DICOM operations including SCP, MPPS, and Modality Worklist.
+This application facilitates DICOM operations including SCP, MPPS, and Modality Worklist for SYNGO MR XA50A.
 
 ## Prerequisites
 
 To run this application, your PC should have the following installed:
-- Python
+- Python > 3.7
 - Git
-- Python virtualenv
+- Python virtualenv --> you may use venv or conda
 
 ## Setup
 
@@ -30,18 +26,17 @@ To run this application, your PC should have the following installed:
     source /path/to/[env_name]/bin/activate
     ```
 
-4. **Run the main script**
+4. **Install Dependencies using pip**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+5. **Config**
+    By default, the program will run as a localhost. To modify the address you change the code inside the script scp_mpps_modalityworklist.py
+    
+    Also, you have to change the peer Dicom address inside the same script as well. 
+
+6. **Run the main script**
     ```bash
     python dicom_app/scp_mpps_modalityworklist.py
     ```
-
-## Usage
-
-After running the main script, the program will wait for a C-FIND request by the DICOM.
-
-To demo the C-FIND request to the SCP, you can run `dicom_scu.py`:
-```bash
-python dicom_scu.py
-```
-
-You may edit the request header in `dicom_scu.py` to suit your needs.
